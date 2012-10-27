@@ -1,4 +1,6 @@
 Data-Engine
 ===========
 
-Drupal-based PostgresQL relational database to host and visualize public, social indicator data. A joint project of the Piton Foundation and the Denver Foundation. Code coming soon. 
+Drupal-based PostgreSQL relational database to compare, visualize and host public social indicator data for the common good. 
+
+A joint project of the Piton Foundation and the Denver Foundation. Code coming soon. 
