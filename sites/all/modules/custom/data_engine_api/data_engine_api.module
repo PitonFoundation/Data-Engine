@@ -1,0 +1,357 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function data_engine_api_menu() {
+
+  $items = array();
+
+  $items['api/dataset/%node/preview'] = array(
+    'page callback' => 'data_engine_api_preview',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['api/dataset/%node/preview/map'] = array(
+    'page callback' => 'data_engine_api_preview_map',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+
+} // data_engine_api_menu
+
+/**
+ * Outputs data set preview HTML.
+ */
+function data_engine_api_preview($node) {
+
+  $content = '';
+  $fields = data_engine_db_fields_from_dataset($node);
+  $total = data_engine_db_record_count_from_node($node);
+  $num_per_page = 10;
+
+  $page = pager_default_initialize($total, $num_per_page);
+  $offset = $num_per_page * $page;
+
+  $records = data_engine_db_records_from_node($node, $offset, $num_per_page);
+
+  $headers = array();
+
+  foreach ($fields as $machine_name => $human_name) {
+    $headers[] = array(
+      'data' => $human_name,
+      // 'field' => $machine_name,
+    );
+  } // foreach
+
+  $rows = array();
+
+  foreach ($records as $record) {
+    $rows[] = array_values($record);
+  } // foreach
+
+  $table = array(
+    'header' => $headers,
+    'rows' => $rows,
+    'attributes' => array(
+      'class' => array(
+        'table--condensed',
+        'table--striped',
+        'table--no-wrap',
+      )
+    ),
+  );
+
+  $content = theme('table', $table);
+  $content .= theme('pager');
+
+  if (isset($_GET['js']) && $_GET['js'] == 1) {
+
+    header('Content-Type: text/html; charset=utf-8');
+
+    print '<html lang="en">
+    <head>
+      <meta charset="utf-8" />' . drupal_get_css() .
+    '</head>
+    <body>' . $content . '</body></html>';
+
+  } // if
+  else {
+
+    return $content;
+
+  } // else
+
+} // data_engine_api_preview
+
+/**
+ * Outputs data set map preview HTML.
+ */
+function data_engine_api_preview_map($node) {
+
+  $center = array('lat' => '39.739167', 'lon' => '-104.984722');
+
+  $map = leaflet_leaflet_map_info();
+
+  $map['OSM Mapnik']['center'] = $center;
+  $map['OSM Mapnik']['settings']['zoom'] = 6;
+  $map['OSM Mapnik']['settings']['scrollWheelZoom'] = FALSE;
+  // $map['OSM Mapnik']['label'] = 'Mapbox';
+  // $map['OSM Mapnik']['layers']['earth']['urlTemplate'] = "http://{s}.tiles.mapbox.com/v3/mapbox.world-glass/{z}/{x}/{y}.png";
+  $map['OSM Mapnik']['layers']['earth']['options']['attribution'] = '';
+
+  $features = array();
+
+  $geo_data = data_engine_db_geo_bounds_from_node($node);
+
+  $json_feature = array(
+    'type' => 'Feature',
+    'geometry' => drupal_json_decode($geo_data),
+    'properties' => array(),
+  );
+  $features[] = array(
+    'type' => 'json',
+    'properties' => array(),
+    'json' => $json_feature,
+  );
+  
+  $iframe = FALSE;
+  $js = FALSE;
+
+  if (isset($_GET['js']) && $_GET['js'] == 1) {
+    $js = TRUE;
+  } // if
+
+  if (isset($_GET['iframe']) && $_GET['iframe'] == 1) {
+    $iframe = TRUE;
+  } // if
+
+  $height = '400px';
+  
+  if ($iframe) {
+    $height = '200px';
+    $map['OSM Mapnik']['settings']['zoom'] = 5;
+  } // if
+  
+  $content = leaflet_render_map($map['OSM Mapnik'], $features, $height);
+
+  if ($js || $iframe) {
+
+    header('Content-Type: text/html; charset=utf-8');
+
+    print '<html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Map Preview</title>
+        ' . drupal_get_css() . '
+        ' . drupal_get_js() . '
+      </head>
+      <body>
+        ' . $content . '
+        ' . drupal_get_js('footer') . '
+      </body>
+    </html>';
+
+  } // if
+  else {
+
+    return $content;
+
+  } // else
+
+} // data_engine_api_preview_map
+
+/**
+ * Implements hook_services_resources().
+ */
+function data_engine_api_services_resources() {
+
+  return array(
+    'dataset' => array(
+      'index' => array(
+        'help' => 'Retrieves a list of datasets',
+        'callback' => 'data_engine_api_dataset_index',
+        'access callback' => 'user_access',
+        'access arguments' => array('access content'),
+        'access arguments append' => FALSE,
+        'args' => array(
+           array(
+             'name' => 'start',
+             'type' => 'int',
+             'description' => 'Paging start',
+             'source' => array('param' => 'start'),
+             'optional' => TRUE,
+           ),
+           array(
+             'name' => 'limit',
+             'type' => 'int',
+             'description' => 'Paging limit',
+             'source' => array('param' => 'limit'),
+             'optional' => TRUE,
+           ),
+           array(
+             'name' => 'key',
+             'type' => 'string',
+             'description' => 'API key',
+             'source' => array('param' => 'key'),
+             'optional' => TRUE,
+           ),
+         ),
+      ),
+      'retrieve' => array(
+        'help' => 'Retrieves a single dataset records',
+        'callback' => 'data_engine_api_dataset_get',
+        'access callback' => 'user_access',
+        'access arguments' => array('access content'),
+        'access arguments append' => FALSE,
+        'args' => array(
+           array(
+             'name' => 'id',
+             'type' => 'int',
+             'description' => 'The ID of the project',
+             'source' => array('path' => 0),
+             'optional' => FALSE,
+           ),
+           array(
+             'name' => 'start',
+             'type' => 'int',
+             'description' => 'Paging start',
+             'source' => array('param' => 'start'),
+             'optional' => TRUE,
+           ),
+           array(
+             'name' => 'limit',
+             'type' => 'int',
+             'description' => 'Paging limit',
+             'source' => array('param' => 'limit'),
+             'optional' => TRUE,
+           ),
+           array(
+             'name' => 'key',
+             'type' => 'string',
+             'description' => 'API key',
+             'source' => array('param' => 'key'),
+             'optional' => TRUE,
+           ),
+         ),
+      ),
+    ),
+  );
+
+} // data_engine_api_services_resources
+
+/**
+ * Provides list of datasets.
+ */
+function data_engine_api_dataset_index($start = 0, $limit = 0, $key = '') {
+
+  if (!data_engine_api_key_is_valid($key)) {
+    return services_error('Invalid API key.', 503);
+  } // if
+
+  $datasets = array();
+
+  $query = db_select('node', 'n')->condition('n.type', 'dataset');
+  $query->fields('n', array('title', 'nid'));
+  $query->condition('n.status', 1);
+
+  $results = $query->execute();
+
+  foreach ($results as $record) {
+
+    $datasets[] = array(
+      'title' => $record->title,
+      'id' => $record->nid,
+    );
+
+  } // foreach
+
+  return $datasets;
+
+} // data_engine_api_dataset_index
+
+/**
+ * Provides info on a single project.
+ */
+function data_engine_api_dataset_get($id, $start = 0, $limit = 0, $key = '') {
+
+  if (!data_engine_api_key_is_valid($key)) {
+    return services_error('Invalid API key.', 503);
+  } // if
+
+  $records = array();
+
+  $node = node_load($id);
+
+  if ($node) {
+
+    if ($start != 0 || $limit != 0) {
+      $records = data_engine_db_records_from_node($node, $start, $limit);
+    } // if
+    else {
+      $records = data_engine_db_records_from_node($node);
+    } // else
+
+  } // if
+
+  if ($records === FALSE) {
+    return services_error('Records could not be loaded.', 503);
+  } // if
+
+  return $records;
+
+} // data_engine_api_dataset_get
+
+/**
+ * Provides given account's API key.
+ */
+function data_engine_api_key_for_acccount($account) {
+
+  if ($account->uid > 0) {
+    return md5($account->init . 'salt' . $account->uid) . '.' . $account->uid;
+  } // if
+
+  return FALSE;
+
+} // data_engine_api_key_for_acccount
+
+/**
+ * Checks if key is valid.
+ */
+function data_engine_api_key_is_valid($key) {
+
+  list($key_start, $uid) = explode('.', $key);
+
+  // Reject on missing UID.
+
+  if (!$uid) {
+    return FALSE;
+  } // if
+
+  $account = user_load($uid);
+
+  // Reject on blocked account.
+
+  if ($account->status != 1) {
+    return FALSE;
+  } // if
+
+  $valid_key = data_engine_api_key_for_acccount($account);
+
+  // Reject on mismatch.
+
+  if ($key != $valid_key) {
+    return FALSE;
+  } // if
+
+  // Approve if not rejected.
+
+  return TRUE;
+
+} // data_engine_api_key_is_valid
+

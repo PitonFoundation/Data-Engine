@@ -1,0 +1,141 @@
+//
+// @file
+// Default tag styles.
+//
+// The only class selectors allowed in this file are those intended
+// for use within the WYSIWYG editor.
+// ----------------------------------------------------------------------------
+
+// Establish Vertical rhythm.
+@include establish-baseline();
+
+html > body {
+  // Override the default line height to allow for smaller baseline heights.
+  @include adjust-leading-to(4);
+  color: $primary-color;
+  font-family: $primary-typeface;
+}
+
+body.html {
+  background-color: $black;
+}
+
+// Headings
+//-----------------------------------------------------------------------------
+
+h1 {
+  @include adjust-font-size-to($h1-font-size);
+  @include rhythm(0, 0, 0, 4, $h1-font-size);
+  font-family: $tertiary-typeface;
+  font-weight: 500;
+}
+
+h2 {
+  @include adjust-font-size-to($h2-font-size);
+  @include rhythm(4, 0, 0, 4, $h2-font-size);
+  color: $accent-color;
+  font-family: $tertiary-typeface;
+  font-weight: 500;
+}
+
+h3 {
+  @include adjust-font-size-to($h3-font-size);
+  @include rhythm(4, 0, 0, 4, $h3-font-size);
+  font-family: $secondary-typeface;
+  font-weight: 500;
+}
+
+h4 {
+  @include adjust-font-size-to($h4-font-size);
+  @include rhythm(4, 0, 0, 2, $h4-font-size);
+  font-family: $secondary-typeface;
+  color: $accent-color;
+}
+
+h5 {
+  @include adjust-font-size-to($h5-font-size);
+  @include rhythm(4, 0, 0, 2, $h5-font-size);
+  color: $gray-darkest;
+  font-family: $secondary-typeface;
+}
+
+h6 {
+  @include adjust-font-size-to($h6-font-size);
+  @include rhythm(4, 0, 0, 0, $h6-font-size);
+  color: $gray-darkest;
+  font-family: $secondary-typeface;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+
+// Links
+//-----------------------------------------------------------------------------
+
+a {
+  @include link-colors(
+    $secondary-color,
+    darken($secondary-color, 10%),
+    darken($secondary-color, 20%),
+    lighten($secondary-color, 5%)
+    );
+  @include hover-link;
+}
+
+
+// Copy
+//-----------------------------------------------------------------------------
+
+p {
+  margin: 0 0 rhythm(2);
+}
+
+blockquote {
+  @include leading-border(1px, 2);
+  @include trailing-border(1px, 2);
+  margin-top: rhythm(4);
+  margin-bottom: rhythm(4);
+  border-color: $gray-lighter;
+  font-style: italic;
+}
+
+// Images
+//-----------------------------------------------------------------------------
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+// Definition Lists
+//-----------------------------------------------------------------------------
+
+dl {
+  margin-bottom: rhythm(3);
+}
+
+dt {
+  font-weight: bold;
+}
+
+dd {
+  margin-left: $w-gutter;
+}
+
+// Code
+//-----------------------------------------------------------------------------
+
+code {
+  color: $gray-darkest;
+}
+
+// Utility classes
+//-----------------------------------------------------------------------------
+
+.clearfix {
+  @include legacy-pie-clearfix;
+}
+
+.intro {
+  @include adjust-font-size-to($fs-xl);
+}

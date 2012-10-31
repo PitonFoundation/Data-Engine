@@ -1,0 +1,539 @@
+<?php
+
+/*=====================================================================
+  BLOCKS
+ ====================================================================*/
+/**
+ * Implements hook_block_info().
+ */
+function data_engine_browse_block_info() {
+  $blocks = array();
+
+  $blocks['data_engine_browse_find_filters'] = array(
+    'info' => t('Find Dataset Filters'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+
+  $blocks['data_engine_browse_vis_filters'] = array(
+    'info' => t('Find Visualizations Filters'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ *
+ * See DELTA_view() for actual implementation.
+ */
+function data_engine_browse_block_view($delta = '') {
+  if (function_exists($delta . '_view')) {
+    return call_user_func($delta . '_view');
+  }
+}
+
+/**
+ * Implements hook_block_configure().
+ *
+ * See DELTA_configure() for actual implementation.
+ */
+function data_engine_browse_block_configure($delta = '') {
+  if (function_exists($delta . '_configure')) {
+    return call_user_func($delta . '_configure');
+  }
+}
+
+/**
+ * Implements hook_block_save().
+ *
+ * See DELTA_save() for actual implementation.
+ */
+function data_engine_browse_block_save($delta = '', $edit = array()) {
+  if (function_exists($delta . '_save')) {
+    return call_user_func($delta . '_save');
+  }
+}
+
+/**
+ * Block code to view data_engine_browse_find_filters
+ */
+function data_engine_browse_find_filters_view() {
+  $block = array('subject' => '', 'content' => '');
+
+  // get the map filter
+  $map = _data_engine_browse_get_map();
+
+  // get the taxonomy terms for categories
+  $terms = _data_engine_browse_get_taxonomy_terms(2);
+
+  // get the taxonomy terms for sources
+  $sources = _data_engine_browse_get_taxonomy_terms(5);
+
+  $block['content'] = theme('data_engine_browse_filters', array(
+    'search_value' => (isset($_GET['search'])) ? htmlspecialchars($_GET['search']) : '',
+    'map' => $map,
+    'terms' => $terms,
+    'sources' => $sources
+  ));
+
+  return $block;
+}
+
+/**
+ * Block code to view data_engine_browse_find_filters
+ */
+function data_engine_browse_vis_filters_view() {
+
+  $block = array('subject' => '', 'content' => '');
+
+  // get the map filter
+  $map = _data_engine_browse_get_map();
+
+  // get the taxonomy terms for categories
+  $terms = _data_engine_browse_get_taxonomy_terms(2);
+
+  $block['content'] = theme('data_engine_browse_filters', array(
+    'search_value' => (isset($_GET['search'])) ? htmlspecialchars($_GET['search']) : '',
+    'map' => $map,
+    'terms' => $terms,
+    'sources' => array()
+  ));
+
+  return $block;
+}
+
+/*=====================================================================
+  BROWSE PAGES AND FILTERS
+ ====================================================================*/
+/**
+ * Show the find/browse dataset page
+ */
+function data_engine_browse_find_dataset() {
+  $view = views_get_view('Find');
+  $view->init();
+  $view->set_display('page');
+  $view->set_use_ajax(TRUE);
+
+  $settings = array(
+    'views' => array(
+      'ajax_path' => url('views/ajax'),
+      'ajaxViews' => array(
+        array(
+          'view_name' => $view->name,
+          'view_display_id' => $view->current_display,
+          'view_args' => check_plain(implode('/', $view->args)),
+          'view_path' => check_plain($_GET['q']),
+          'view_base_path' => $view->get_path(),
+          'view_dom_id' => 1,
+          'pager_element' => $view->pager['element'],
+        ),
+      ),
+    ),
+  );
+  drupal_add_js($settings, 'setting');
+
+  // Hide the search button as the form is automatically submited.
+  drupal_add_js(
+    "jQuery(document).ready(function () {
+       jQuery('#filter-submit-btn').hide();
+     });"
+    , 'inline'
+  );
+
+  // get our EntityFieldQuery
+  $query = _data_engine_browse_query('dataset');
+
+  // filter by categories
+  _data_engine_browse_filter_categories($query);
+
+  // filter by sources
+  _data_engine_browse_filter_sources($query);
+
+  // filter by map
+  _data_engine_browse_filter_map($query);
+
+  // filter by search
+  $search = _data_engine_browse_search_argument();
+
+  // set view arguments
+  _data_engine_browse_set_view_arguments($view, $query, $search);
+
+  $view->execute();
+
+  // for some reason I need this or there's an error
+  $view->dom_id = 'find';
+  $viewHTML = $view->render();
+
+  // if this is an ajax request, return JSON
+  if(_data_engine_browse_is_ajax()) {
+    // return an AJAX response
+    $response = array('html' => $viewHTML, 'args' => $args);
+    drupal_add_http_header('Content-Type', 'application/json', TRUE);
+    echo drupal_json_encode($response);
+    exit;
+  }
+
+  return $viewHTML;
+}
+
+/**
+ * Show the find/browse visualizations page
+ */
+function data_engine_browse_find_visualizations() {
+  $view = views_get_view('visualizations');
+  $view->init();
+  $view->set_display('page');
+
+  // Hide the search button as the form is automatically submited.
+  drupal_add_js(
+    "jQuery(document).ready(function () {
+       jQuery('#filter-submit-btn').hide();
+     });"
+    , 'inline'
+  );
+
+  // get our EntityFieldQuery
+  $query = _data_engine_browse_query('visualization');
+
+  // filter by categories
+  _data_engine_browse_filter_categories($query);
+
+  // filter by map
+  _data_engine_browse_filter_map($query, 'visualization');
+
+  // filter by search
+  $search = _data_engine_browse_search_argument();
+
+  // set view arguments
+  _data_engine_browse_set_view_arguments($view, $query, $search);
+
+  $view->execute();
+
+  // for some reason I need this or there's an error
+  $view->dom_id = 'visualizations';
+  $viewHTML = $view->render();
+
+  // if this is an ajax request, return JSON
+  if(_data_engine_browse_is_ajax()) {
+    // return an AJAX response
+    $response = array('html' => $viewHTML, 'args' => $args, 'views' => $view->args);
+    drupal_add_http_header('Content-Type', 'application/json', TRUE);
+    echo drupal_json_encode($response);
+    exit;
+  }
+
+  return $viewHTML;
+}
+
+/*=====================================================================
+  FORM ALTER
+ ====================================================================*/
+/**
+ * Implements hook_form_alter().
+ *
+ * Change the exposed filters on the find forms to checkboxes
+ */
+function data_engine_browse_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'views_exposed_form' && $form['#id'] == 'views-exposed-form-find-page') {
+    data_engine_browse_change_select_to_checkboxes($form['field_data_categories_tid']);
+    data_engine_browse_change_select_to_checkboxes($form['field_created_data_tid']);
+  }
+}
+
+/**
+ * Change the form field from a select box to a set of checkboxes
+ * @param  array $form_element The form element
+ */
+function data_engine_browse_change_select_to_checkboxes(&$form_element) {
+  $form_element['#type'] = 'checkboxes';
+  $options = array();
+  foreach ($form_element['#options'] as $key => $option) {
+    if (is_object($option)) {
+      foreach ($option->option as $tid => $label) {
+        $options[$tid] = $label;
+      }
+    }
+    else {
+      $options[$key] = $option;
+    }
+  }
+  $form_element['#options'] = $options;
+}
+
+/*=====================================================================
+  MENU
+ ====================================================================*/
+/**
+ * Implements hook_menu().
+ */
+function data_engine_browse_menu() {
+  $items = array();
+  $items['find'] = array(
+    'title' => 'Find Datasets',
+    'page callback' => 'data_engine_browse_find_dataset',
+    'access arguments' => array('access content'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['visualize'] = array(
+    'title' => 'Visualize',
+    'page callback' => 'data_engine_browse_find_visualizations',
+    'access arguments' => array('access content'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+/*=====================================================================
+  THEMES
+ ====================================================================*/
+
+/**
+ * Implements hook_theme().
+ */
+function data_engine_browse_theme($existing, $type, $theme, $path) {
+  return array(
+    'data_engine_browse_filters' => array(
+      'variables' => array('terms' => array(), 'sources' => array(), 'class' => array()),
+      'template' => 'data_engine_browse_filters',
+      'path' => drupal_get_path('module', 'data_engine_browse') . '/theme'
+    ),
+    'data_engine_browse_terms' => array(
+      'variables' => array('terms' => array(), 'class' => array(), 'name' => 'categories'),
+      'template' => 'data_engine_browse_terms',
+      'path' => drupal_get_path('module', 'data_engine_browse') . '/theme'
+    ),
+    'data_engine_browse_map' => array(
+      'variables' => array('map' => NULL),
+      'template' => 'data_engine_browse_map',
+      'path' => drupal_get_path('module', 'data_engine_browse') . '/theme'
+    ),
+  );
+}
+
+/**
+ * Implements hook_install().
+ */
+function data_engine_browse_install() {
+  $json_file = drupal_get_path('module', 'data_engine_browse') . '/data_engine_browse.terms.json';
+  $json = file_get_contents($json_file);
+  $terms = drupal_json_decode($json);
+
+  _data_engine_browse_save_terms($terms);
+}
+
+/*=====================================================================
+  INTERNAL FUNCTIONS
+ ====================================================================*/
+
+function _data_engine_browse_get_map() {
+
+  drupal_add_js(drupal_get_path('module', 'data_engine_browse') . '/js/data_engine_browse.map.js');
+
+  $center = array('lat' => '39.739167', 'lon' => '-104.984722');
+
+  $map = leaflet_leaflet_map_info();
+
+  $map['OSM Mapnik']['center'] = $center;
+  $map['OSM Mapnik']['settings']['zoom'] = 9;
+  $map['OSM Mapnik']['settings']['scrollWheelZoom'] = FALSE;
+  // $map['OSM Mapnik']['label'] = 'Mapbox';
+  // $map['OSM Mapnik']['layers']['earth']['urlTemplate'] = "http://{s}.tiles.mapbox.com/v3/mapbox.world-glass/{z}/{x}/{y}.png";
+  $map['OSM Mapnik']['layers']['earth']['options']['attribution'] = '';
+  return $map['OSM Mapnik'];
+
+} // _data_engine_browse_get_map
+
+/**
+ * Filter the query for any given categories
+ * @param  object $query The EFQ object
+ */
+function _data_engine_browse_filter_categories(&$query) {
+  if (isset($_GET['categories']) && is_array($_GET['categories'])) {
+    $categories = $_GET['categories'];
+    $isNumeric = true;
+    foreach ($categories as $value) {
+      if (!is_numeric($value)){
+        $isNumeric = false;
+        break;
+      }
+    }
+
+    if ($isNumeric) {
+      // get NIDs for this category
+      $query->fieldCondition('field_data_categories', 'tid', $categories, 'IN');
+    }
+    else {
+      watchdog('data_engine_browse', 'Non-numeric IDs passed to browse functionality');
+    }
+  }
+}
+
+/**
+ * Filter the query for any given sources
+ * @param  object $query The EFQ object
+ */
+function _data_engine_browse_filter_sources(&$query) {
+  if (isset($_GET['sources']) && is_array($_GET['sources'])) {
+    $sources = $_GET['sources'];
+    $isNumeric = true;
+    foreach ($sources as $value) {
+      if (!is_numeric($value)){
+        $isNumeric = false;
+        break;
+      }
+    }
+
+    if ($isNumeric) {
+      // get NIDs for this category
+      $query->fieldCondition('field_created_data', 'tid', $sources, 'IN');
+    }
+  }
+}
+
+/**
+ * Filters the query for map bounds.
+ * @param object $query the EFQ object.
+ */
+function _data_engine_browse_filter_map(&$query, $type = 'dataset') {
+
+  if (isset($_GET['map-bounds']) && $_GET['map-bounds'] != '') {
+
+    $nids = data_engine_db_get_datasets_within_bounds($_GET['map-bounds']);
+
+    if ($type == 'dataset') {
+      $query->propertyCondition('nid', $nids, 'IN');
+    } // if
+    else {
+      $query->fieldCondition('field_utilized_datasets', 'target_id', $nids, 'IN');
+    } // else
+
+  } // if
+
+} // _data_engine_browse_filter_map
+
+/**
+ * Get the nested category terms
+ *
+ * @param int $vid The vocabulary vid
+ */
+function _data_engine_browse_get_taxonomy_terms($vid) {
+  $query = db_select('taxonomy_term_data', 't');
+  $query->fields('t');
+  $query->join('taxonomy_term_hierarchy', 'h', 't.tid = h.tid');
+  $query->fields('h', array('parent'));
+  $query->join('taxonomy_index', 'i', 't.tid = i.tid');
+  $query->condition('vid', $vid, '=');
+  $query->distinct();
+  $query
+    ->orderBy('h.parent')
+    ->orderBy('t.weight')
+    ->orderBy('t.name');
+  $results = $query->execute();
+
+  $terms = array();
+  while (($result = $results->fetchAssoc())) {
+    if (!isset($terms[$result['tid']]) && !$result['parent']) {
+      $terms[$result['tid']] = $result;
+    }
+    elseif($result['parent']) {
+      if (!isset($terms[$result['parent']]['children'])) {
+        $terms[$result['parent']]['children'] = array();
+      }
+      array_push($terms[$result['parent']]['children'], $result);
+    }
+  }
+  return $terms;
+}
+
+/**
+ * Recursively save terms
+ *
+ * Used by data_engine_browse_install()
+ * @param  array $terms
+ * @param  int $parent
+ */
+function _data_engine_browse_save_terms($terms, $parent = null) {
+  $skipKeys = array('children', 'tid');
+  foreach ($terms as $term) {
+    $thisTerm = new stdClass();
+    foreach($term as $key => $value) {
+      if (in_array($key, $skipKeys)) {
+        continue;
+      }
+      $thisTerm->$key = $value;
+      if ($parent) {
+        $thisTerm->parent = $parent;
+      }
+    }
+    taxonomy_term_save($thisTerm);
+
+    if (isset($term['children'])) {
+      _data_engine_browse_save_terms($term['children'], $thisTerm->tid);
+    }
+  }
+}
+
+/**
+ * Get the search argument from the GET variables
+ * @return string [description]
+ */
+function _data_engine_browse_search_argument() {
+  $search = '';
+  if (isset($_GET['search']) && is_string($_GET['search']) && strlen($_GET['search']) > 0) {
+    $search = $_GET['search'];
+  }
+  return filter_xss($search);
+}
+
+/**
+ * Set the arguments for the browse view based on parameters passed for this search
+ *
+ * Runs the EFQ query and sets view arguments accordingly.
+ *
+ * @param  object $view   Views object
+ * @param  object $query  EFQ object
+ * @param  string $search The text search for this query
+ */
+function _data_engine_browse_set_view_arguments(&$view, &$query, $search) {
+
+  $entities = $query->execute();
+
+  $nids = array();
+  if (isset($entities['node']) && count($entities['node']) > 0) {
+    $nids = array_keys($entities['node']);
+  }
+
+  if (count($nids) > 0 || $search != '') {
+    $nids = implode('+', $nids);
+    $args = array($nids);
+    if ($search) {
+      $args[] = $search;
+    }
+    $view->set_arguments($args);
+  }
+  else {
+    // no results
+    $view->set_arguments(array(0));
+  }
+}
+
+/**
+ * Is the current request an AJAX request?
+ * @return boolean Return TRUE if this is an AJAX request
+ */
+function _data_engine_browse_is_ajax() {
+  return !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+}
+
+/**
+ * Get the EntityFieldQuery for this browse query
+ * @param  string $type The content type for the EFQ
+ * @return EntityFieldQuery       The EFQ object
+ */
+function _data_engine_browse_query($type) {
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', $type);
+  return $query;
+}

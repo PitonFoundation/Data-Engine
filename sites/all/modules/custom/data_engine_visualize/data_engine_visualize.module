@@ -1,0 +1,137 @@
+<?php
+define('VISUALIZE_MAX_DATASETS', 2);
+
+/**
+ * Implements hook_menu().
+ */
+function data_engine_visualize_menu() {
+  $items = array();
+  $items['visualize/add'] = array(
+    'title' => 'Add Visualization',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('data_engine_visualize_add_form'),
+    'access arguments' => array('create unpublished visualization content'),
+    'file' => 'data_engine_visualize.form.inc'
+  );
+  $items['visualize/visualization'] = array(
+    'page callback' => 'data_engine_visualize_visualization',
+    'access arguments' => array('create unpublished visualization content'),
+  );
+  return $items;
+}
+
+/**
+ * Create the DataEngineVisualization for this node
+ * @param  object $visualization Visualization node
+ * @return object                DataEngineVisualization object
+ */
+function data_engine_visualize_create($visualization) {
+  module_load_include('inc', 'data_engine_visualize', 'includes/DataEngineVisualizationFactory');
+  return DataEngineVisualizationFactory::create($visualization);
+}
+
+/**
+ * Create & return the visualization HTML from a GET request
+ *
+ * This function is both an AJAX and an API function.
+ *
+ * @see data_engine_visualize_create
+ */
+function data_engine_visualize_visualization($config = NULL, $args = NULL) {
+  // create a list of the allowed visualization types as they will
+  // be used in the config/URL
+  $visualizationTypes = data_engine_visualize_get_visualization_types();
+  $allowedTypes = array();
+  foreach($visualizationTypes as $type) {
+    $allowedTypes[] = str_replace(' ', '-', strtolower($type['name']));
+  }
+
+  // if no args are passed in, use GET directly
+  if (!$args) {
+    $args = $_GET;
+  }
+
+  // config data is either JSON or an array
+  if (!$config && isset($args['config'])) {
+    if (is_string($args['config'])) {
+      $config = drupal_json_decode($args['config']);
+    }
+    else {
+      $config = $args['config'];
+    }
+  }
+  elseif (!$config && !isset($args['config'])) {
+    // no configuration
+    drupal_deliver_page(404);
+  }
+
+  $visualizationKey = 'visualization_'. sha1(drupal_json_encode($config));
+
+  // watchdog('data_engine_visualize', 'Config: ' . drupal_json_encode($config));
+
+  // validate the config
+  $required = array('type', 'typeName', 'datasets', 'attributes');
+  foreach ($required as $requiredItem) {
+    if (!isset($config[$requiredItem])) {
+      throw new Exception('Missing required element: ' . $requiredItem);
+    }
+  }
+
+  if (!in_array($config['typeName'], $allowedTypes)) {
+    throw new Exception('Invalid visualization type: '. $config['type']);
+  }
+
+  // get our visualization object so that we can render it!
+  $visualization = data_engine_visualize_create($config);
+
+  // the chart type requires a different set of data depending on if this is an
+  // AJAX request or if this is an API call
+  if (in_array($config['typeName'], array('chart', 'map')) && _data_engine_visualize_is_ajax()) {
+    $response = array(
+      'type' => $config['typeName'],
+      'data' => $visualization->data($args),
+      'visualizationID' => $visualization->visualizationID($args)
+    );
+  }
+  else {
+    $response = array('type' => $config['typeName'], 'html' => $visualization->render($args));
+  }
+
+  // if this is an AJAX request, just return the JSON response
+  if (_data_engine_visualize_is_ajax()) {
+    drupal_json_output($response);
+    exit;
+  }
+  return $response;
+}
+
+/**
+ * Get the visualization type taxonomy terms
+ * @return array Terms
+ */
+function data_engine_visualize_get_visualization_types() {
+  $taxonomies = taxonomy_vocabulary_get_names();
+  $query = db_select('taxonomy_term_data', 't');
+  $query->join('taxonomy_term_hierarchy', 'h', 't.tid = h.tid');
+  $query->orderBy('h.parent')
+    ->orderBy('t.weight')
+    ->orderBy('t.name');
+  $query->fields('t');
+  $query->fields('h', array('parent'));
+  $query->condition('vid', $taxonomies['visualization_types']->vid, '=');
+  $results = $query->execute();
+
+  $visualizations = array();
+  while (($result = $results->fetchAssoc())) {
+    $visualizations[] = $result;
+  }
+  return $visualizations;
+}
+
+/**
+ * Is the current request an AJAX request?
+ * @return boolean Return TRUE if this is an AJAX request
+ */
+function _data_engine_visualize_is_ajax() {
+  return !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+}

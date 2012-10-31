@@ -1,0 +1,16 @@
+//
+// @file
+// Feature list and view mode styles styles.
+// ----------------------------------------------------------------------------
+
+.feature-list {
+  @include nup-container;
+  padding-left: 0;
+  margin: 0 (-1 * $w-gutter-half);
+}
+
+.feature-item {
+  @include nup-base;
+  @include nup-item(3);
+  margin-bottom: rhythm(4);
+}

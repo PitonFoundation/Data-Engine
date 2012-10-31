@@ -1,0 +1,244 @@
+// BASE CLASS
+// ----------
+
+.nav {
+  margin-left: 0;
+  list-style: none;
+  padding-left: 0;
+}
+
+.nav-inline {
+  > li {
+    display: inline;
+
+    > a {
+      @include inline-block;
+    }
+  }
+}
+
+// TABS AND PILLS
+// -------------
+
+// Common styles
+.nav-tabs,
+.nav-pills {
+  @include clearfix;
+}
+
+.nav-tabs > li,
+.nav-pills > li {
+  float: left;
+}
+
+.nav-tabs > li > a,
+.nav-pills > li > a {
+  display: block;
+  padding-right: 12px;
+  padding-left: 12px;
+  margin-right: 4px;
+}
+
+// TABS
+// ----------------------------------------------------------------------------
+
+// Give the tabs something to sit on
+.nav-tabs {
+  border-bottom: 1px solid #ddd;
+}
+
+// Make the list-items overlay the bottom border
+.nav-tabs > li {
+  margin-bottom: -1px;
+}
+
+// Actual tabs (as links)
+.nav-tabs > li > a {
+  @include border-top-radius(4px);
+  @include leading-border(1px, .5);
+  @include trailing-border(1px, .5);
+  @include box-shadow($white 1px 1px 1px 0 inset);
+  border: 1px solid $gray-lightest;
+  background-color: $gray-white;
+  color: $gray;
+
+  &:hover {
+    border-color: $gray-light $gray-light $white;
+  }
+}
+
+// Active state, and it's :hover to override normal :hover
+.nav-tabs > .active > a,
+.nav-tabs > .active > a:hover {
+  color: $gray-darker;
+  background-color: $gray-lightest;
+  border: 1px solid #ddd;
+  border-bottom-color: transparent;
+  cursor: default;
+}
+
+.nav-tabs.nav-stacked {
+  border-bottom: none;
+
+  > li {
+    margin-bottom: 0;
+  }
+
+  > li > a {
+    @include border-left-radius(4px);
+    @include border-right-radius(0);
+    @include box-shadow(
+      $white 1px 1px 1px 0 inset,
+      rgba($gray-dark, .2) -1px 0 0 0 inset
+    );
+    border-right-color: $gray-white;
+    margin-left: -2px;
+
+    &:hover {
+      border-color: $gray-light $white $gray-light $gray-light;
+    }
+  }
+
+  > .active > a,
+  > .active > a:hover {
+    @include box-shadow(
+      $white 1px 1px 1px 0 inset
+    );
+    margin-right: -1px;
+    border-right-color: transparent;
+    border-bottom-color: #ddd;
+  }
+}
+
+// PILLS
+// -----------
+
+.nav-pills {
+  > li > a {
+    @include border-radius(4px);
+    margin-right: $w-gutter-half;
+    background-color: $gray-dark;
+    color: $gray-lighter;
+    font-family: $tertiary-typeface;
+
+    &:hover {
+      background-color: $black;
+      color: $white;
+      text-decoration: none;
+    }
+
+    &.active {
+      background-color: $orange;
+      color: $white;
+    }
+  }
+}
+
+
+
+// STACKED
+// -----------
+
+// Stacked tabs and pills
+.nav-stacked > li {
+  float: none;
+}
+
+.nav-stacked > li > a {
+  display: block;
+  padding: rhythm(1) 12px;
+  margin-right: 0; // no need for the gap between nav items
+
+  &.active {
+    font-weight: bold;
+  }
+}
+
+
+// STACKED BUTTONS
+// ---------------
+
+.nav-stacked.nav-buttons {
+  @include border-radius(3px);
+  border: 1px solid $gray-light;
+
+  > li {
+    border-bottom: 1px solid $gray-light;
+
+    &.last {
+      border-bottom: none;
+    }
+
+    > a {
+      @include adjust-font-size-to(12px);
+      padding: rhythm(.5) $w-gutter-half;
+      color: $orange-dark;
+
+      &:hover {
+        background-color: $orange-white;
+      }
+
+      &:active,
+      &.active {
+        background-color: $orange;
+        color: $white;
+      }
+    }
+  }
+}
+
+// BUTTON BAR
+// ----------
+
+.nav-inline.nav-buttons {
+  @include clearfix;
+  @include background-image(linear-gradient(top, $gray-light $gray-dark));
+  margin: 0;
+  border-top: 1px solid $gray-light;
+  border-bottom: 1px solid $gray-light;
+  border-right: $gray 1px solid;
+  border-left: $gray-light 1px solid;
+
+  > li {
+    float: left;
+    margin-right: 0;
+  }
+
+  > li > a {
+    @include text-shadow();
+    height: 20px;
+    border-right: $gray-white 1px solid;
+    border-left: $gray-lightest 1px solid;
+    padding: 14px 24px;
+    margin: 0;
+    color: $white;
+    font-weight: bold;
+
+    &:hover {
+      @include background-image(linear-gradient(top, $gray-white $gray-lightest));
+    }
+
+    &:active,
+    &.active,
+    &.active-trail {
+      @include background-image(linear-gradient(bottom, $gray-light $gray));
+      border-right: $gray-dark 1px solid;
+      border-left: $gray-dark 1px solid;
+    }
+  }
+}
+
+#tabs {
+  margin-bottom: rhythm(4);
+}
+
+// Force scrollbars on webkit.
+iframe::-webkit-scrollbar {
+  -webkit-appearance: none;
+  width: 7px;
+}
+iframe::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background-color: rgba(0,0,0,.5);
+  -webkit-box-shadow: 0 0 1px rgba(255,255,255,.5);
+}

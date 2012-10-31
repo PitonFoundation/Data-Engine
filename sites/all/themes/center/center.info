@@ -1,0 +1,42 @@
+;-------------- B A S I C   S E T T I N G S -------------
+name = Center
+description = A robust base theme
+core = 7.x
+
+;-------------- F E A T U R E S -------------
+
+;-------------- R E G I O N S -------------
+
+regions[page_top]           = Page Top
+regions[page_bottom]        = Page Bottom
+
+regions[utility]            = Utility
+regions[header]             = Header
+regions[navigation]         = Navigation
+
+regions[help]               = Help
+regions[highlighted]        = Highlighted
+
+regions[above_content]      = Above Content
+regions[content]            = Content
+regions[sidebar_first]      = Sidebar First
+regions[sidebar_second]     = Sidebar Second
+regions[below_content]      = Below Content
+
+regions[footer]             = Footer
+regions[admin_footer]       = Admin Footer
+
+;-------------- C S S -------------
+stylesheets[all][] = css/override/kill/ctools.css
+stylesheets[all][] = css/override/kill/field.css
+stylesheets[all][] = css/override/kill/node.css
+stylesheets[all][] = css/override/kill/system.messages.css
+stylesheets[all][] = css/override/kill/system.menus.css
+stylesheets[all][] = css/override/kill/user.css
+stylesheets[all][] = css/override/kill/views.css
+stylesheets[all][] = css/override/kill/field_collection.theme.css
+stylesheets[all][] = css/override/keep/system.base.css
+stylesheets[all][] = css/override/keep/system.theme.css
+stylesheets[all][] = css/override/keep/search.css
+
+;-------------- J S -------------

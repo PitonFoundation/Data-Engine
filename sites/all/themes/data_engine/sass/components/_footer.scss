@@ -1,0 +1,28 @@
+//
+// @file
+// Footer region styles.
+// ----------------------------------------------------------------------------
+
+// Footer region
+#footer {
+  @include clearfix;
+  min-width: $w-full + 24px;
+  padding: rhythm(4) 0;
+  color: $gray-white;
+
+  .page-width {
+    @include zen-grid-container;
+  }
+}
+
+#block-menu-block-2 {
+  @include zen-grid-item(3, 5);
+  padding: 0 0 0 $w-gutter * 2;
+}
+
+#block-data-engine-base-copyright {
+  @include zen-grid-item(4, 1);
+  @include adjust-font-size-to($fs-xs);
+  padding-left: 0;
+  padding-top: rhythm(1, $fs-xs);
+}

@@ -1,0 +1,89 @@
+//
+// @file
+// Content type specific styles.
+//
+// If styles can be used across content types, they should
+// go in components/_modes.scss instead.
+// ----------------------------------------------------------------------------
+
+// BASIC PAGE
+.node-page {
+  .ds-content {
+    max-width: 39em;
+
+    > p,
+    > blockquote,
+    > h5,
+    > h6,
+    > ul,
+    > ol {
+      max-width: 33em;
+    }
+  }
+}
+
+// VISUALIZATION
+.node-visualization {
+  // Teaser
+  &.view-mode-teaser {
+    position: relative;
+    min-height: 92px;
+
+    > .ds-content {
+      padding-left: ce(105px);
+    }
+
+    > .ds-footer {
+      width: ce(105px);
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .field-name-node-link {
+      margin-top: rhythm(-1);
+    }
+  }
+
+  &.view-mode-full {
+    @include zen-grid-container;
+
+    > .ds-content {
+      @include zen-grid-item(6, 1, left, 8);
+      padding-left: 0;
+    }
+
+    > .ds-aside {
+      @include zen-grid-item(2, 1, right, 8);
+      padding-right: 0;
+    }
+
+    .field-name-share-links {
+      text-align: left;
+
+      .field-label {
+        display: inline;
+        margin-right: .5em;
+      }
+    }
+  }
+}
+
+// Tackbacks block
+#block-views-visualization-trackbacks-block {
+  @include zen-grid-item(6, 1, left, 8);
+  padding-left: 0;
+  position: relative;
+
+  .trackbacks-summary {
+    @include adjust-font-size-to($fs-xs);
+    font-family: $sans-typeface;
+    position: absolute;
+    top: rhythm(-6, $fs-xs);
+    right: $w-gutter-half;
+  }
+
+  .trackbacks-count {
+    font-weight: bold;
+  }
+}

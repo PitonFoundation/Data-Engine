@@ -1,0 +1,20 @@
+{ "rules_send_email_when_new_dataset_is_added" : {
+    "LABEL" : "Send email when new dataset is added",
+    "PLUGIN" : "reaction rule",
+    "TAGS" : [ "email" ],
+    "REQUIRES" : [ "rules" ],
+    "ON" : [ "node_insert" ],
+    "IF" : [
+      { "node_is_of_type" : { "node" : [ "node" ], "type" : { "value" : { "dataset" : "dataset" } } } }
+    ],
+    "DO" : [
+      { "mail" : {
+          "to" : "rob+engine@atendesigngroup.com",
+          "subject" : "A new dataset has been added to [site:name]: [node:title]",
+          "message" : "Hello,\r\n\r\nA new dataset has been added to [site:name].\r\n\r\n    [node:title]\r\n    [node:edit-url]\r\n    [node:author]\r\n    [node:created]",
+          "language" : [ "" ]
+        }
+      }
+    ]
+  }
+}

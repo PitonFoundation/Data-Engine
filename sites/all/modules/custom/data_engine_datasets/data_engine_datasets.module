@@ -1,0 +1,302 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function data_engine_datasets_menu() {
+
+  $items = array();
+
+  $items['dataset-download/%node'] = array(
+    'title' => 'Download',
+    'page callback' => 'data_engine_datasets_download',
+    'page arguments' => array(1),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['dataset-download/all'] = array(
+    'title' => 'Download',
+    'page callback' => 'data_engine_datasets_download_all',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+
+} // data_engine_datasets_menu
+
+/**
+ * Downloads .zip file with all relevant dataset files.
+ */
+function data_engine_datasets_download($node) {
+
+  $file = drupal_realpath('public://data_engine_datasets/' . $node->nid . '_records.csv');
+  $temp_name = drupal_realpath(drupal_tempnam('temporary://', 'file'));
+
+  if (!file_exists($file)) {
+    data_engine_datasets_save_records_to_file($node);
+  } // if
+
+  $directory = 'data_engine_download_' . $node->nid;
+
+  $zip = new ZipArchive();
+  $zip->open($temp_name, ZIPARCHIVE::CREATE);
+  $zip->addEmptyDir($directory);
+  $zip->addFile($file, $directory . '/' . $node->nid . '_records.csv');
+  $zip->close();
+
+  header('Content-type: application/zip');
+  header('Content-Disposition: attachment; filename=' . $directory . '.zip');
+  header('Content-Length: ' . filesize($temp_name));
+
+  readfile($temp_name);
+
+} // data_engine_datasets_download
+
+/**
+ * Downloads all datasets for the current user.
+ */
+function data_engine_datasets_download_all() {
+
+  $view = views_get_view('my_downloads');
+  $view->set_display('page');
+  $view->execute();
+
+  $temp_name = drupal_realpath(drupal_tempnam('temporary://', 'file'));
+  $directory = 'data_engine_download_all';
+
+  $zip = new ZipArchive();
+  $zip->open($temp_name, ZIPARCHIVE::CREATE);
+  $zip->addEmptyDir($directory);
+
+  foreach ($view->result as $record) {
+    $nids[] = $record->nid;
+  } // foreach
+
+  foreach ($nids as $nid) {
+
+    $file = drupal_realpath('public://data_engine_datasets/' . $nid . '_records.csv');
+
+    if (!file_exists($file)) {
+      $node = node_load($nid);
+      data_engine_datasets_save_records_to_file($node);
+    } // if
+
+    $zip->addFile($file, $directory . '/' . $nid . '_records.csv');
+
+  } // foreach
+
+  $zip->close();
+
+  header('Content-type: application/zip');
+  header('Content-Disposition: attachment; filename=' . $directory . '.zip');
+  header('Content-Length: ' . filesize($temp_name));
+
+  readfile($temp_name);
+
+} // data_engine_datasets_download_all
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Configure the add dataset form
+ */
+function data_engine_datasets_form_alter(&$form, &$form_state, $form_id) {
+
+  global $user;
+
+  if ($form_id == 'dataset_node_form' && $form['nid']['#value'] === NULL) {
+
+    // Hide Query Information Field & Revisions for non-admins
+    //-----------------------------------------------------------------
+    if (!user_access('administer content types')) {
+
+      $form['field_query_information']['#access'] = FALSE;
+      $form['revision_information']['#access'] = FALSE;
+
+    } //if
+
+    // Prompt anonymous users to login
+    //-----------------------------------------------------------------
+
+    if ($user->uid == 0) {
+
+      drupal_goto('node/187', array('query'=>drupal_get_destination()));
+
+    } //if
+
+    // Change title of Node add dataset form
+    //-----------------------------------------------------------------
+    drupal_set_title(t('Contribute'));
+
+    // Add description to title field
+    //-----------------------------------------------------------------
+    $form['title']['#description'] = t('This is the name you want to give the dataset you are contributing.  Suggestion: keep it as descriptive as possible, without being too long.  Please follow this guide: [geographic unit of analysis_geographic coverage_subject or domain_year].  Example: A file of student performance for 3rd grade reading by school for the entire state would look like: school_state_csapgender_2010.');
+
+    // handle show/hide form functionality
+    //-----------------------------------------------------------------
+    $form['#prefix'] = '<div id="dataset-add-node-form">';
+    $form['#suffix'] = '</div>';
+
+    $value = 'tabular';
+    if (!isset($form_state['values'])) {
+      // set the default type to tabular
+      $form['field_data_type'][LANGUAGE_NONE]['#default_value'] = 'tabular';
+    }
+    elseif (isset($form_state['values']['field_data_type'])) {
+       $value = $form_state['values']['field_data_type'][LANGUAGE_NONE][0]['value'];
+    }
+    else {
+
+      // If spatial fields are set, this is spatial data.
+
+      foreach ($form_state['values'] as $key => $value) {
+
+        if (strpos($key, 'field_spatial') === 0) {
+          $value = 'spatial';
+        } // if
+
+      } // foreach
+
+    } // else
+
+    $form['field_data_type'][LANGUAGE_NONE]['#ajax'] = array(
+      'callback' => 'data_engine_datasets_form',
+      'wrapper' => 'dataset-add-node-form',
+      'method' => 'replace'
+    );
+
+    switch ($value) {
+      case 'tabular':
+        unset(
+          $form['#groups']['group_spatial_files'],
+          $form['#fieldgroups']['group_spatial_files']
+        );
+        _data_engine_datasets_unrequire('spatial', $form);
+        break;
+      case 'spatial':
+        unset(
+          $form['#groups']['group_tabular_files'],
+          $form['#fieldgroups']['group_tabular_files'],
+          $form['field_location_type']
+        );
+        _data_engine_datasets_unrequire('tabular', $form);
+        break;
+    }
+
+    // set the form to be unpublished by default
+    $form['options']['status']['#default_value'] = 0;
+
+    // Add a cancel option
+    $form['actions']['cancel'] = array(
+      '#type' => 'link',
+      '#weight' => 20,
+      '#title' => t('Cancel'),
+      '#href' => '<front>',
+      '#options' => array(
+        'attributes' => array(
+          'class' => array(
+            'link--cancel',
+          ),
+        ),
+      ),
+    );
+  }
+  elseif ($form_id == 'dataset_node_form' && $form['nid']['#value'] !== NULL) {
+    _data_engine_datasets_unrequire('tabular', $form);
+    _data_engine_datasets_unrequire('spatial', $form);
+  }
+}
+
+/**
+ * AJAX handler for the form. Just returns the form
+ */
+function data_engine_datasets_form($form, &$form_state) {
+  return $form;
+}
+
+/**
+ * Go through spatial/tabular fields and set them to not be required
+ * @param  string $type Either 'spatial' or 'tabular'
+ * @param  array  $form The form object
+ */
+function _data_engine_datasets_unrequire($type, &$form) {
+  foreach($form as $key => $value) {
+    if (preg_match("/^field_{$type}_[^\_]+\_file$/", $key)) {
+      $language = isset($form[$key]['#language']) ? $form[$key]['#language'] : LANGUAGE_NONE;
+      $form[$key][$language][0]['#required'] = FALSE;
+    }
+  }
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function data_engine_datasets_node_update($node) {
+
+  if ($node->type == 'dataset') {
+    data_engine_datasets_save_records_to_file($node);
+  } // if
+
+} // data_engine_datasets_node_update
+
+/**
+ * Implements hook_node_insert().
+ */
+function data_engine_datasets_node_insert($node) {
+
+  if ($node->type == 'dataset') {
+    data_engine_datasets_save_records_to_file($node);
+  } // if
+
+} // data_engine_datasets_node_insert
+
+/**
+ * Saves records to a file, for downloads.
+ */
+function data_engine_datasets_save_records_to_file($node) {
+
+  $index = 1;
+  $limit = 500;
+
+  $temp_name = drupal_tempnam('temporary://', 'file');
+  $file_handle = fopen($temp_name, 'w');
+
+  // Get first record for headers.
+
+  $records = data_engine_db_records_from_node($node, 0, 1);
+
+  if (count($records) == 0) {
+    return FALSE;
+  } // if
+
+  $keys = array_keys($records[0]);
+  fputcsv($file_handle, $keys);
+  $values = array_values($records[0]);
+  fputcsv($file_handle, $values);
+
+  // Get and write records in batches to avoid memory limit errors.
+
+  while (count($records) > 0) {
+
+    $records = data_engine_db_records_from_node($node, $index, $limit);
+
+    foreach ($records as $record) {
+      $values = array_values($record);
+      fputcsv($file_handle, $values);
+    } // foreach      
+
+    $index += $limit;
+
+  } // while
+
+  fclose($file_handle);
+  
+  $destination = file_stream_wrapper_uri_normalize('public://data_engine_datasets/' . $node->nid . '_records.csv');
+  $destination_directory = dirname($destination);
+
+  file_prepare_directory($destination_directory, FILE_CREATE_DIRECTORY);
+  file_unmanaged_move($temp_name, $destination, FILE_EXISTS_REPLACE);
+
+} // data_engine_datasets_save_records_to_file

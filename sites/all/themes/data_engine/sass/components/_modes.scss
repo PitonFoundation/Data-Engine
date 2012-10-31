@@ -1,0 +1,11 @@
+//
+// @file
+// View Mode specific styles.
+// ----------------------------------------------------------------------------
+
+.view-mode-teaser {
+  .field-name-body {
+    @include adjust-font-size-to($fs-s);
+    margin-bottom: rhythm(2, $fs-s);
+  }
+}

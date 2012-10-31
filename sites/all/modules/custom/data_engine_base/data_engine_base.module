@@ -1,0 +1,34 @@
+<?php
+/**
+ * Implements hook_block_info().
+ */
+function data_engine_base_block_info() {
+  // Create a block that displays copyright text.
+  $blocks['copyright'] = array(
+    'info' => t('Copyright Text'),
+    'cache' => DRUPAL_CACHE_GLOBAL
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function data_engine_base_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    case 'copyright':
+      // We don't want a title.
+      $block['subject'] = NULL;
+      // Get current year.
+      $year = date('Y');
+      $block['content']['copyright']['#markup'] =
+        t("Data Engine, an open source project. See us on ") .
+        l('Github', 'https://github.com/PitonFoundation/Data-Engine') . '.';
+      break;
+  }
+
+  return $block;
+}

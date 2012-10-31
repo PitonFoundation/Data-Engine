@@ -1,0 +1,299 @@
+<?php 
+// $Id: node_embed.module,v 1.6 2011/02/07 17:03:47 jec006 Exp $
+
+/**
+ * This module defines an input filter for taking an embed code syntax ([[nid: ###]])
+ * and removing the embed code and replacing with a rendered node view at that position
+ * in the text field. *
+ */
+
+/**
+ * Implementation of hook_filter_info()
+ */
+function node_embed_filter_info() {
+
+  $filters['node_embed'] = array(
+    'title' => t('Insert node'),
+    'description' => t('By including the syntax [[nid:(node_id)]], this filter will embed the node with given NID'),
+    'prepare callback' => 'node_embed_filter_node_embed_prepare',
+    'process callback' => 'node_embed_filter_node_embed_process',
+    'tips callback'  => 'node_embed_filter_node_embed_tips',
+    'cache' => FALSE,
+  );
+
+  return $filters;
+
+} // node_embed_filter_info
+
+/**
+ * Prepare callback for hook_filter
+ */
+function node_embed_filter_node_embed_prepare($text, $filter, $format, $langcode, $cache, $cache_id) {
+
+  return $text;
+
+} // node_embed_filter_node_embed_prepare
+
+/**
+ * Process callback for hook_filter
+ */
+function node_embed_filter_node_embed_process($text, $filter, $format, $langcode, $cache, $cache_id) {
+
+  return preg_replace_callback('/\[\[nid:(\d+)(\s.*)?\]\]/', '_node_make_replacements', $text);
+
+} // node_embed_filter_node_embed_process
+
+/**
+ * Tips callback for hook_filter
+ */
+function node_embed_filter_node_embed_tips($filter, $format, $long) {
+  
+  return t('[[nid:123]] - Insert a node content');
+
+} // node_embed_filter_node_embed_tips
+  
+/**
+ * Provides the replacement html to be rendered in place of the embed code.
+ * Does not handle nested embeds.
+ *
+ * @param $matches
+ *    numeric node id that has been captured by preg_replace_callback
+ * @return
+ *    The rendered HTML replacing the embed code
+ */ 
+function _node_make_replacements($matches) {
+
+  $node = node_load($matches[1]);
+  
+  if ($node == FALSE || !node_access('view', $node) || !$node->status) {
+    
+    return "[[nid:{$matches[1]}]]";
+
+  } // if
+  else {
+
+    $node->node_embed_parameters = array();
+
+    if (isset($matches[2]) && trim($matches[2]) != '') {
+      parse_str(trim(str_replace('&nbsp;', ' ', $matches[2])), $node->node_embed_parameters);
+    } // if
+
+    if (!isset($node->node_embed_parameters['view_mode'])) {
+      $node->node_embed_parameters['view_mode'] = 'node_embed';
+    } // if
+
+    $view = node_view($node, $node->node_embed_parameters['view_mode'], NULL);
+    $render = drupal_render($view);
+
+    return $render;
+
+  } // else
+
+} // _node_make_replacements
+
+/**
+ * Implements hook_theme_registry_alter()
+ * This is where we add our default template for the fckeditor view page template.
+ */
+function node_embed_theme_registry_alter(&$theme_registry) {
+  
+  //Add 'html--ckeditor-node-embed.tpl.php' template file
+  $theme_registry['html__ckeditor_node_embed'] = Array();
+  $theme_registry['html__ckeditor_node_embed']['template'] = 'html--ckeditor-node-embed';
+  $theme_registry['html__ckeditor_node_embed']['path'] = drupal_get_path('module', 'node_embed') . "/theme";
+  $theme_registry['html__ckeditor_node_embed']['render element'] = 'page';
+  $theme_registry['html__ckeditor_node_embed']['base hook'] = 'html';
+  $theme_registry['html__ckeditor_node_embed']['type'] = 'theme_engine';
+  $theme_registry['html__ckeditor_node_embed']['theme path'] = path_to_theme();
+  $theme_registry['html__ckeditor_node_embed']['preprocess functions'] = Array();
+  $theme_registry['html__ckeditor_node_embed']['process functions'] = Array();
+
+  //Add 'page--ckeditor-node-embed.tpl.php' template file
+  $theme_registry['page__ckeditor_node_embed'] = Array();
+  $theme_registry['page__ckeditor_node_embed']['template'] = 'page--ckeditor-node-embed';
+  $theme_registry['page__ckeditor_node_embed']['path'] = drupal_get_path('module', 'node_embed') . "/theme";
+  $theme_registry['page__ckeditor_node_embed']['render element'] = 'page';
+  $theme_registry['page__ckeditor_node_embed']['base hook'] = 'page';
+  $theme_registry['page__ckeditor_node_embed']['type'] = 'theme_engine';
+  $theme_registry['page__ckeditor_node_embed']['theme path'] = path_to_theme();
+  $theme_registry['page__ckeditor_node_embed']['preprocess functions'] = Array();
+  $theme_registry['page__ckeditor_node_embed']['process functions'] = Array();
+  
+} // node_embed_theme_registry_alter
+
+/**
+ * Make compatible with views 2 for default view.
+ */
+function node_embed_views_api() {
+
+  return array('api' => 3);
+
+} // node_embed_views_api
+
+/**
+ * Implementation of hook_views_pre_render() {
+ */
+function node_embed_views_pre_render(&$view) {
+
+  if ($view->name == 'ckeditor_node_embed' && $view->current_display == 'page_1') {
+
+    node_embed_suppress_admin_menu();
+
+  } // if
+
+} // node_embed_views_pre_render
+
+
+/**
+ * Implementation of hook_views_default_views().
+ */
+function node_embed_views_default_views() {
+
+  $views = array();
+  
+  if (module_exists('ckeditor') || module_exists('wysiwyg')) {
+
+    $pathCK = drupal_get_path('module', 'node_embed') . '/ckeditor/ckeditor_node_embed.view.inc';
+    include_once($pathCK);
+    $views[$view->name] = $view;
+
+  } // if
+
+  return $views;
+
+} // node_embed_views_default_views
+
+/**
+ * Implements hook_views_data_alter()
+ */
+function node_embed_views_data_alter(&$data)  {
+
+  $data['views']['node_embed'] = array(
+    'title' => t('Node embed add area'),
+    'help' => t('Provide links to add nodes.'),
+    'area' => array(
+      'handler' => 'views_handler_node_embed_add_area',
+    ),
+  );
+
+} // node_embed_views_data_alter
+
+/**
+ * Implement hook_form_alter()
+ * add a validation handler to nodes with node_embed.
+ */
+function node_embed_form_alter(&$form, &$form_state, $form_id) {
+
+  $form['#validate'][] = 'node_embed_validate';
+
+} // node_embed_form_alter
+
+/**
+ * validation for the node_embed filter.
+ * we do not allow nodes to embed in themselves.
+ * results in segment fault.
+ */
+function node_embed_validate($node, $form) {
+
+  if (isset($form['values']['nid'])) {
+
+    $nid = $form['values']['nid'];
+
+    $needle = "[[nid:{$nid}]]";    
+
+    $num = 0;
+    $language = (isset($form['values']['language']) && $form['values']['language']) ? $form['values']['language'] : LANGUAGE_NONE;
+
+    while (isset($form['values']['body'][$language][$num])) {
+
+      $found = strpos($form['values']['body'][$form['values']['language']][$num]['value'], $needle);
+  
+      if ($found == TRUE) {
+        form_set_error('edit-body', t('A node is not allowed to embed in itself.'));
+      } // if
+      
+      $num++;
+
+    } // while
+
+  } // if
+
+} // node_embed_validate
+
+/**
+ * Implementing the Wysiwyg API
+ * Register a directory containing Wysiwyg plugins.
+ *
+ * @param $type
+ *   The type of objects being collected: either 'plugins' or 'editors'.
+ * @return
+ *   A sub-directory of the implementing module that contains the corresponding
+ *   plugin files. This directory must only contain integration files for
+ *   Wysiwyg module.
+ */
+function node_embed_wysiwyg_include_directory($type) {
+
+  switch ($type) {
+    case 'plugins':
+      // You can just return $type, if you place your Wysiwyg plugins into a
+      // sub-directory named 'plugins'.
+      return $type;
+  } // switch
+
+} // node_embed_wysiwyg_include_directory
+
+/**
+ *  Implementation of hook_init - attach the needed css files if we're on a form page
+ */
+function node_embed_init() {
+
+	drupal_add_css(drupal_get_path('module', 'node_embed') . '/plugins/node_embed/node_embed.css');	
+
+} // node_embed_init
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function node_embed_entity_info_alter(&$entity_info) {
+
+  if (isset($entity_info['node'])) {
+
+    $entity_info['node']['view modes'] += array(
+      'node_embed' => array(
+        'label' => 'Node embed',
+        'custom settings' => FALSE,
+      ),
+    );
+
+  } // if
+
+} // node_embed_entity_info_alter
+
+/**
+ * Implements template_preproccess_node().
+ */
+function node_embed_preprocess_node(&$variables) {
+
+  if ($variables['view_mode'] == 'node_embed') {
+
+    $node = $variables['node'];
+    $variables['theme_hook_suggestions'][] = 'node__node_embed';
+    $variables['theme_hook_suggestions'][] = 'node__' . $node->type . '__node_embed';
+
+  } // if
+
+} // node_embed_preprocess_node
+
+/**
+ * Suppress Admin Menu if it is present
+ */
+function node_embed_suppress_admin_menu() {
+
+  if (module_exists('admin_menu')) {
+
+    admin_menu_suppress();
+
+  } // if
+
+} // node_embed_suppress_admin_menu
+

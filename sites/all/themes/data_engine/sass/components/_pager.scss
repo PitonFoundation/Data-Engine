@@ -1,0 +1,61 @@
+//
+// @file
+// Pager styles.
+// ----------------------------------------------------------------------------
+
+// Pager ul
+.pager {
+  @extend .nav;
+  font-family: $tertiary-typeface;
+  font-weight: 500;
+  text-align: center;
+  padding-left: 0;
+  margin-bottom: rhythm(2);
+  position: relative;
+
+  .ajax-progress {
+    float: none; /* LTR */
+    position: absolute;
+    top: .33em;
+    left: 0;
+  }
+
+  .ajax-progress .throbber {
+    float: none; /* LTR */
+  }
+}
+
+// Pager links
+.pager-first,
+.pager-previous,
+.pager-item,
+.pager-next,
+.pager-last {
+  display: inline;
+
+  > a {
+    @include inline-block;
+    @include adjust-font-size-to($fs-xs);
+    padding: 2px 8px;
+    margin: rhythm(1, $fs-xs) 2px;
+
+    &:hover {
+      //color: $gray-black;
+    }
+  }
+}
+
+.pager-ellipsis {
+  @include inline-block;
+}
+
+.pager-current {
+  @include inline-block;
+  @include adjust-font-size-to($fs-xs);
+  padding: 0 8px;
+  margin: rhythm(1, $fs-xs) 2px;
+}
+
+.progress-disabled {
+  float: none;
+}

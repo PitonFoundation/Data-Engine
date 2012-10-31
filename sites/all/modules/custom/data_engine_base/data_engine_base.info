@@ -1,0 +1,4 @@
+name =  Data Engine Base
+package = Data Engine
+description = General customizations
+core = 7.x

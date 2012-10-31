@@ -1,0 +1,53 @@
+//
+// @file
+// Heading and title styles.
+// ----------------------------------------------------------------------------
+
+// Page titles
+.page-title {
+  margin: rhythm(4, $h1-font-size) 0 rhythm(4, $h1-font-size);
+}
+
+.page-title--small {
+  @include adjust-font-size-to($fs-xxl);
+  @include trailing-border(1px, 1, $fs-xxl);
+  border-color: $gray-light;
+  margin: rhythm(4, $fs-xxl) 0 rhythm(6, $fs-xxl);
+  color: $gray;
+}
+
+// Article title (non-full-display node titles )
+.article-title {
+  @include adjust-font-size-to($fs-l);
+  margin-bottom: rhythm(1, $fs-l);
+  font-family: $tertiary-typeface;
+
+  > a {
+    @include link-colors(
+      $red,
+      $red-dark,
+      darken($red-dark, 10%),
+      lighten($red, 15%)
+    );
+  }
+}
+
+// Label title
+.filter-title {
+  @include adjust-font-size-to($fs-m);
+  margin-bottom: rhythm(1, $fs-m);
+  color: $gray;
+}
+
+// Block title
+.block-title {
+  @include adjust-font-size-to($fs-xl);
+  font-family: $secondary-typeface;
+  font-weight: 500;
+  margin-bottom: rhythm(2, $fs-xl);
+  color: $gray-dark;
+}
+
+.block-title--ruled {
+  @include text-ruled(9em);
+}

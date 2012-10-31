@@ -1,0 +1,11 @@
+<?php
+/**
+ * Implements hook_form_alter().
+ *
+ * Resize the taxonomy term "relations" field
+ */
+function data_engine_admin_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'taxonomy_form_term') {
+    $form['relations']['parent']['#size'] = 10;
+  }
+}

@@ -1,0 +1,47 @@
+//
+// @file
+// Search styles.
+// ----------------------------------------------------------------------------
+
+// Search block
+#block-search-form {
+  clear: right;
+  float: right;
+  padding-top: rhythm(1);
+
+  > .block-content {
+    position: relative;
+    right: -12px;
+    margin-right: 0;
+    margin-left: -12px;
+  }
+
+  .form-text {
+    @include float-left;
+    @include border-radius(4px);
+    @include adjust-font-size-to(16px, 3);
+    width: 14em;
+    border: none;
+    padding: rhythm(1, 16px) 3em rhythm(1, 16px) 10px;
+    margin-left: -1 * $w-gutter-half;
+    background-color: $white;
+    color: $gray-dark;
+  }
+
+  input[type="submit"] {
+    @include float-left;
+    @include box-shadow(none);
+    @include text-shadow(none);padding: 2px 10px;
+    border: none;
+    margin: 2px 0 0 -2em;
+    background-color: transparent;
+    background-image: none;
+    color: $gray-light;
+    font-family: $symbolset;
+    font-size: 20px;
+
+    &:hover {
+      color: $orange;
+    }
+  }
+}

@@ -1,0 +1,14 @@
+//
+// @file
+// User login form styles.
+//
+// ----------------------------------------------------------------------------
+
+#block-user-login {
+  label {
+    @include inline-block;
+    text-align: right;
+    margin-right: $w-gutter-half;
+    width: 7em;
+  }
+}

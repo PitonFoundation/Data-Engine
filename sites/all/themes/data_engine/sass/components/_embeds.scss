@@ -1,0 +1,51 @@
+//
+// @file
+// Visualization embed styles.
+// ----------------------------------------------------------------------------
+
+// Visualization Embed classes
+//-----------------------------------------------------------------------------
+
+.embed--visualization {
+  padding: 6px;
+}
+
+.visualization-title {
+  @include adjust-font-size-to($fs-l);
+  margin-bottom: rhythm(2, $fs-l);
+  font-weight: bold;
+}
+
+.embedded {
+  padding-bottom: rhythm(4);
+
+  .pagination {
+    position: fixed;
+    bottom: rhythm(4);
+    width: 100%;
+    height: rhythm(4);
+    padding: 0 .5em;
+    background-color: $white;
+  }
+
+  &.embedded--data-table {
+    padding-bottom: rhythm(8); // Make room for the pager.
+  }
+}
+
+.visualization-footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: rhythm(4);
+  padding: 0 .5em;
+  background-color: $white;
+}
+
+.source {
+  @include adjust-font-size-to($fs-xs);
+  display: block;
+  margin: rhythm(1, $fs-xs) 0;
+  font-family: $sans-typeface;
+}
+

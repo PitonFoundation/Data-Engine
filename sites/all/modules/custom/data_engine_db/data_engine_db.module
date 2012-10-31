@@ -1,0 +1,1000 @@
+<?php
+
+define('DATA_ENGINE_DB_PLACEHOLDER', '___');
+
+/**
+ * Implements hook_cron().
+ * Checks for new data sets.
+ */
+function data_engine_db_cron() {
+
+  data_engine_db_sync_taxonomy_from_reference('ref_geographic_level', 'location_types', 1);
+  data_engine_db_sync_taxonomy_from_reference('ref_domain', 'data_categories', 2);
+  data_engine_db_sync_taxonomy_from_reference('ref_subdomain', 'data_categories', 2);
+  data_engine_db_sync_taxonomy_from_reference('ref_source', 'sources', 5);
+
+  $datasets = data_engine_db_datasets();
+  $queue = DrupalQueue::get('data_engine_db_dataset_updates');
+  $count = $queue->numberOfItems();
+
+  foreach ($datasets as $id) {
+
+    $info = data_engine_db_dataset_info($id, TRUE);
+
+    if ($info['nid'] == '') {
+
+      $info = data_engine_db_dataset_info($id);
+      $node = data_engine_db_node_from_info($info);
+      node_save($node);
+      data_engine_db_set_dataset_nid($info, $node->nid);
+
+    } // if
+    elseif ($count == 0) {
+
+      // Queue updated datasets for re-saving.
+
+      $info = data_engine_db_dataset_info($id);      
+      $queue->createItem($info);
+
+    } // else
+
+  } // foreach
+
+} // data_engine_db_cron
+
+/**
+ * Implements hook_cron_queue_info().
+ */
+function data_engine_db_cron_queue_info() {
+
+  $queues['data_engine_db_dataset_updates'] = array(
+    'worker callback' => 'data_engine_db_dataset_update',
+    'time' => 20,
+  );
+  return $queues;
+
+} // data_engine_db_cron_queue_info
+
+/**
+ * Updates a given dataset, based on info.
+ */
+function data_engine_db_dataset_update($info) {
+
+  $node = node_load($info['nid']);
+  $original_node = clone $node;
+  $updated_node = data_engine_db_node_from_info($info, $node);
+  
+  $original_wrapper = entity_metadata_wrapper('node', $original_node);
+  $updated_wrapper = entity_metadata_wrapper('node', $updated_node);
+
+  // if ($original_wrapper->field_query_information->value() != $updated_wrapper->field_query_information->value()) {      
+    node_save($updated_node);
+  // } // if
+
+} // data_engine_db_dataset_update
+
+/**
+ * Returns list of data set IDs in DB.
+ */
+function data_engine_db_datasets() {
+
+  $ids = array();
+
+  db_set_active('data');
+
+  $results = db_query('SELECT id FROM datasets');
+
+  foreach ($results as $result) {
+    $ids[] = $result->id;
+  } // foreach
+
+  db_set_active('default');
+
+  return $ids;
+
+} // data_engine_db_datasets
+
+/**
+ * Returns reference table from DB.
+ */
+function data_engine_db_reference_table($table_name) {
+  
+  $records = array();
+
+  db_set_active('data');
+
+  $results = db_query('SELECT * FROM ' . $table_name);
+
+  foreach ($results as $result) {
+    $records[$result->id] = $result;
+  } // foreach
+
+  db_set_active('default');
+
+  return $records;
+  
+} // data_engine_db_reference_table
+
+/**
+ * Returns term from a refernce ID.
+ */
+function data_engine_db_term_from_reference_id($id, $vocabulary_name, $full_term = TRUE) {
+
+  $query = new EntityFieldQuery();
+  $entities = $query
+    ->entityCondition('entity_type', 'taxonomy_term')
+    ->entityCondition('bundle', $vocabulary_name)
+    ->fieldCondition('field_database_id', 'value', $id)
+    ->range(0, 1)
+    ->execute();
+  
+  if (isset($entities['taxonomy_term']) && count($entities['taxonomy_term']) > 0) {
+  
+    $tids = array_keys($entities['taxonomy_term']);
+    
+    if (!$full_term) {
+      return $tids[0];
+    } // if
+    
+    $terms = entity_load('taxonomy_term', $tids);
+    return array_shift($terms);
+    
+  } // if
+
+  return FALSE;
+    
+} // data_engine_db_term_from_reference_id
+
+/**
+ * Syncs a taxonomy from a reference table.
+ */
+function data_engine_db_sync_taxonomy_from_reference($table_name, $vocabulary_name, $vid) {
+
+  $records = data_engine_db_reference_table($table_name);
+  
+  foreach ($records as $id => $record) {
+    
+    $term_id = data_engine_db_term_from_reference_id($id, $vocabulary_name, FALSE);
+
+    if (!$term_id) {
+
+      if (isset($record->parent_id)) {      
+        $parent_term_id = data_engine_db_term_from_reference_id($record->parent_id, $vocabulary_name, FALSE);
+        $term = entity_create('taxonomy_term', array('vocabulary_machine_name' => $vocabulary_name, 'name' => $record->name, 'vid' => $vid, 'parent' => $parent_term_id));
+      } // if
+      else {
+        $term = entity_create('taxonomy_term', array('vocabulary_machine_name' => $vocabulary_name, 'name' => $record->name, 'vid' => $vid));
+      } // else
+      $term_wrapper = entity_metadata_wrapper('taxonomy_term', $term);
+      $term_wrapper->field_database_id->set($id);
+      
+      taxonomy_term_save($term);
+
+    } // if
+
+  } // foreach
+  
+} // data_engine_db_sync_taxonomy_from_reference
+
+/**
+ * Returns list of data set nodes in Drupal.
+ */
+function data_engine_db_dataset_nodes() {
+
+  $nodes = array();
+
+  $query = new EntityFieldQuery();
+  $entities = $query
+    ->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', 'dataset')
+    ->execute();
+
+  $nids = array();
+
+  if (isset($entities['node']) && count($entities['node']) > 0) {
+    $nids = array_keys($entities['node']);
+  } // if
+  
+  return entity_load('node', $nids);
+
+} // data_engine_db_dataset_nodes
+
+/**
+ * Returns information about a given dataset.
+ */
+function data_engine_db_dataset_info($id, $skip_tables = FALSE) {
+
+  $info = array('id' => $id);
+
+  db_set_active('data');
+
+  $object = db_query('SELECT metadata FROM datasets WHERE id = :id', array(':id' => $id))->fetchObject();
+
+  $json = json_decode($object->metadata);
+
+  $info['title'] = $json->name;
+  $info['nid'] = $json->nid;
+  $info['metadata'] = $json;
+
+  if (!$skip_tables) {
+
+    $info['tables'] = array();
+
+    foreach ($json->tables as $table_id) {
+      $info['tables'][] = data_engine_db_table_info($table_id);
+    } // foreach
+
+    list($geo_table_id, $field) = explode('.', $info['metadata']->gkey);
+    $info['geo_table'] = data_engine_db_geo_table_info($geo_table_id);
+
+  } // if
+
+  db_set_active('default');
+
+  return $info;
+
+} // data_engine_db_dataset_info
+
+/**
+ * Returns information about a given table.
+ */
+function data_engine_db_table_info($id) {
+
+  $info = array();
+
+  db_set_active('data');
+
+  $object = db_query('SELECT m.*, t.table_name FROM data_tables_metadata m JOIN data_tables t ON t.id = m.id WHERE t.id = :id', array(':id' => $id))->fetchObject();
+
+  $json = json_decode($object->metadata);
+
+  $info['id'] = $object->id;
+  $info['title'] = $object->table_name;
+  $info['fields'] = $json->field_metadata;
+  $info['tags'] = (array)$json->table_tags;
+
+  db_set_active('default');
+
+  $field_machine_names = data_engine_db_fields_in_table($info['title']);
+
+  foreach ($info['fields'] as $key => $field) {
+    if (isset($field_machine_names[$key])) {
+      $info['fields'][$key]->machine_name = $field_machine_names[$key];
+    } // if
+  } // foreach
+
+  return $info;
+
+} // data_engine_db_table_info
+
+/**
+ * Returns information about a given geo table.
+ */
+function data_engine_db_geo_table_info($id) {
+
+  $info = array();
+
+  db_set_active('data');
+
+  $object = db_query('SELECT t.id, t.table_name FROM data_tables t WHERE t.id = :id', array(':id' => $id))->fetchObject();
+
+  $info['id'] = $object->id;
+  $info['title'] = $object->table_name;
+
+  db_set_active('default');
+
+  return $info;
+
+} // data_engine_db_geo_table_info
+
+/**
+ * Returns ordered list of fields in a given table.
+ */
+function data_engine_db_fields_in_table($table) {
+
+  $fields = array();
+
+  db_set_active('data');
+
+  $result = db_query('SELECT a.attname FROM  pg_attribute a, pg_class c WHERE c.relname = :table AND a.attnum > 0 AND a.attrelid = c.oid ORDER BY a.attnum', array(':table' => $table));
+
+  foreach ($result as $record) {
+    $fields[] = $record->attname;
+  } // foreach
+
+  db_set_active('default');
+
+  return $fields;
+
+} // data_engine_db_fields_in_table
+
+/**
+ * Creates (does not save) a new node from a DB dataset record.
+ */
+function data_engine_db_node_from_info($info, $node = FALSE) {
+
+  if ($node == FALSE) {
+    $node = entity_create('node', array('type' => 'dataset', 'title' => $info['title']));
+  } // if
+
+  $json = json_encode($info);  
+
+  $wrapper = entity_metadata_wrapper('node', $node);
+  $wrapper->field_query_information->set($json);
+  
+  $first_table = array_shift($info['tables']);
+  
+  // Set year
+  
+  if (isset($first_table['tags']['year'])) {
+    $wrapper->field_date_range->set($first_table['tags']['year']);
+  } // if
+  
+  // Set source
+
+  if (isset($first_table['tags']['source']) && $first_table['tags']['source'] != '') {
+    
+    $source_term = data_engine_db_term_from_reference_id($first_table['tags']['source'], 'sources');
+
+    if ($source_term) {
+
+      $source = entity_create('field_collection_item', array('field_name' => 'field_organization'));
+      $source->setHostEntity('node', $node);
+      $source_wrapper = entity_metadata_wrapper('field_collection_item', $source);
+      $source_wrapper->field_organization_name->set($source_term);
+      $source->save();
+
+    } // if
+    
+  } // if
+  
+  // Set location type
+  
+  if (isset($first_table['tags']['geographic_level']) && $first_table['tags']['geographic_level'] != '') {
+
+    $location_type_term = data_engine_db_term_from_reference_id($first_table['tags']['geographic_level'], 'location_types');
+
+    if ($location_type_term) {
+      $wrapper->field_location_type->set($location_type_term);      
+    } // if
+
+  } // if
+  
+  // Set categories
+  
+  if (isset($first_table['tags']['domain']) && $first_table['tags']['domain'] != '') {
+
+    $terms = array();
+    $domain_term = data_engine_db_term_from_reference_id($first_table['tags']['domain'], 'data_categories');
+
+    if ($domain_term) {
+      $terms[] = $domain_term;
+    } // if
+
+    if (isset($first_table['tags']['subdomain']) && $first_table['tags']['subdomain'] != '') {
+    
+      $subdomain_term = data_engine_db_term_from_reference_id($first_table['tags']['subdomain'], 'data_categories');
+    
+      if ($subdomain_term) {
+        $terms[] = $subdomain_term;
+      } // if
+    
+    } // if
+
+    if (count($terms) > 0) {
+      $wrapper->field_data_categories->set($terms);      
+    } // if
+
+  } // if
+
+  return $node;
+
+} // data_engine_db_node_from_info
+
+/**
+ * Sets the nid value of the dataset record with given info.
+ */
+function data_engine_db_set_dataset_nid($info, $nid) {
+
+  $metadata = $info['metadata'];
+  $metadata->nid = $nid;
+  $json = json_encode($metadata);
+
+  db_set_active('data');
+
+  db_query('UPDATE datasets SET metadata = :json WHERE id = :id', array(':json' => $json, ':id' => $info['id']))->fetchObject();
+
+  db_set_active('default');
+
+} // data_engine_db_set_dataset_nid
+
+/**
+ * Creates a query from a dataset node.
+ */
+function data_engine_db_query_from_node($node, $skip_fields = FALSE) {
+
+  try {
+
+    $wrapper = entity_metadata_wrapper('node', $node);
+    $info = json_decode($wrapper->field_query_information->value());
+
+    if ($info) {
+    
+      $foreign_keys = data_engine_db_foreign_keys_by_table_id($info->metadata->fkeys);
+
+      $first_table = array_shift($info->tables);
+      $key_for_first_table = $foreign_keys[$first_table->id];
+
+      db_set_active('data');
+
+      $query = db_select($first_table->title, $first_table->title);
+
+      if (!$skip_fields) {
+        data_engine_db_add_table_fields_to_query($first_table, $query);
+      } // if
+
+      if (count($info->tables) > 0) {
+        
+        foreach ($info->tables as $table) {
+          
+          $key_for_table = $foreign_keys[$table->id];
+          $query->join($table->title, $table->title, $table->title . '.' . $key_for_table . ' = ' . $first_table->title . '.' . $key_for_first_table);
+          
+          if (!$skip_fields) { 
+            data_engine_db_add_table_fields_to_query($table, $query);
+          } // if
+
+        } // foreach
+        
+      } // if
+
+      db_set_active('default');
+
+      return $query;
+
+    } // if
+    else {
+
+      return FALSE;
+
+    } // else
+
+  } // try
+  catch (Exception $e) {
+
+    db_set_active('default');
+    watchdog('data_engine_db', 'DB Error: ' . $e->getMessage() .
+      ' [NID: ' . $node->nid . '; Line: ' . $e->getLine() . '; File: ' . $e->getFile() . ']' .
+      "\n" . $e->getTraceAsString(), array(), WATCHDOG_ERROR);
+    return FALSE;
+
+  } // catch
+
+} // data_engine_db_query_from_node
+
+/**
+ * Creates a query from multiple dataset nodes.
+ */
+function data_engine_db_query_from_nodes($node_one, $node_two) {
+  
+  $node_one_wrapper = entity_metadata_wrapper('node', $node_one);
+  $node_one_info = json_decode($node_one_wrapper->field_query_information->value());
+
+  $node_one_geo_keys = data_engine_db_foreign_keys_by_table_id(array($node_one_info->metadata->gkey));
+  $node_one_geo_table = $node_one_info->geo_table;
+  $node_one_geo_key = $node_one_geo_keys[$node_one_geo_table->id];
+
+  // Get query for first node.
+
+  $query = data_engine_db_geo_query_from_node($node_one);
+
+  $node_two_wrapper = entity_metadata_wrapper('node', $node_two);
+  $node_two_info = json_decode($node_two_wrapper->field_query_information->value());
+
+  $node_two_foreign_keys = data_engine_db_foreign_keys_by_table_id($node_two_info->metadata->fkeys);
+
+  $node_two_first_table = array_shift($node_two_info->tables);
+  $node_two_key_for_first_table = $node_two_foreign_keys[$node_two_first_table->id];
+
+  try {
+
+    db_set_active('data');
+
+    // Join dataset 2 first table to dataset 1 geo.
+
+    $query->join($node_two_first_table->title, $node_two_first_table->title, $node_one_geo_table->title . '.' . $node_one_geo_key . ' = ' . $node_two_first_table->title . '.' . $node_two_key_for_first_table);
+    
+    if (count($node_two_info->tables) > 0) {
+
+      // Join dataset 2 additional tables to first table.
+
+      foreach ($node_two_info->tables as $table) {
+            
+        $key_for_table = $foreign_keys[$table->id];
+        $query->join($table->title, $table->title, $table->title . '.' . $key_for_table . ' = ' . $node_two_first_table->title . '.' . $node_two_key_for_first_table);
+            
+        data_engine_db_add_table_fields_to_query($table, $query);
+  
+      } // foreach
+          
+    } // if
+  
+    db_set_active('default');
+
+    return $query;
+
+  } // try
+  catch (Exception $e) {
+  
+    db_set_active('default');
+    watchdog('data_engine_db', 'DB Error: ' . $e->getMessage() .
+      ' [NIDs: ' . $node_one->nid . '+' . $node_two->nid . '; Line: ' . $e->getLine() . '; File: ' . $e->getFile() . ']' .
+      "\n" . $e->getTraceAsString(), array(), WATCHDOG_ERROR);
+    return FALSE;
+  
+  } // catch
+
+} // data_engine_db_query_from_nodes
+
+/**
+ * Creates a geo query from a dataset node.
+ */
+function data_engine_db_geo_query_from_node($node, $skip_fields = FALSE) {
+
+  try {
+
+    $wrapper = entity_metadata_wrapper('node', $node);
+    $info = json_decode($wrapper->field_query_information->value());
+
+    $foreign_keys = data_engine_db_foreign_keys_by_table_id($info->metadata->fkeys);
+
+    $first_table = array_shift($info->tables);
+    $key_for_first_table = $foreign_keys[$first_table->id];
+
+    $geo_keys = data_engine_db_foreign_keys_by_table_id(array($info->metadata->gkey));
+    $geo_table = $info->geo_table;
+    $geo_key = $geo_keys[$geo_table->id];
+
+    $query = data_engine_db_query_from_node($node, $skip_fields);
+
+    db_set_active('data');
+
+    $query->join($geo_table->title, $geo_table->title, $geo_table->title . '.' . $geo_key . ' = ' . $first_table->title . '.' . $key_for_first_table);
+
+    db_set_active('default');
+    
+    return $query;
+
+  } // try
+  catch (Exception $e) {
+
+    db_set_active('default');
+    watchdog('data_engine_db', 'DB Error: ' . $e->getMessage() .
+      ' [NID: ' . $node->nid . '; Line: ' . $e->getLine() . '; File: ' . $e->getFile() . ']' .
+      "\n" . $e->getTraceAsString(), array(), WATCHDOG_ERROR);
+    return FALSE;
+
+  } // catch
+
+} // data_engine_db_geo_query_from_node
+
+/**
+ * Returns array with table => field structure, based on table.field structure.
+ */
+function data_engine_db_foreign_keys_by_table_id($keys_array) {
+
+  $keys = array();
+
+  foreach ($keys_array as $key) {
+
+    list($table, $field) = explode('.', $key);
+    $keys[$table] = $field;
+
+  } // foreach
+
+  return $keys;
+
+} // data_engine_db_foreign_keys_by_table_id
+
+/**
+ * Returns records from a dataset, in range.
+ */
+function data_engine_db_records_from_node($node, $start = FALSE, $limit = FALSE) {
+
+  try {
+
+    $records = array();
+
+    $query = data_engine_db_query_from_node($node);
+
+    db_set_active('data');
+
+    if ($start !== FALSE && $limit !== FALSE) {
+      $query->range($start, $limit);
+    } // if
+
+    db_set_active('default');
+
+    return data_engine_db_query_to_records($query);
+
+  } // try
+  catch (Exception $e) {
+
+    db_set_active('default');
+    watchdog('data_engine_db', 'DB Error: ' . $e->getMessage() .
+      ' [NID: ' . $node->nid . '; Line: ' . $e->getLine() . '; File: ' . $e->getFile() . ']' .
+      "\n" . $e->getTraceAsString(), array(), WATCHDOG_ERROR);
+    return FALSE;
+
+  } // catch
+
+} // data_engine_db_records_from_node
+
+/**
+ * Returns records from a dataset, in range.
+ */
+function data_engine_db_record_count_from_node($node) {
+
+  $records = array();
+
+  $query = data_engine_db_query_from_node($node);
+
+  if ($query) {
+
+    db_set_active('data');
+
+    $result = $query->countQuery()->execute()->fetchField();
+
+    db_set_active('default');
+
+    return $result;
+
+  } // if
+  else {
+
+    db_set_active('default');
+    return FALSE;
+
+  } // else
+
+} // data_engine_db_record_count_from_node
+
+/**
+ * Returns array of field names from given table info.
+ */
+function data_engine_db_field_names_from_table($table) {
+
+  $fields = array();
+
+  foreach ($table->fields as $field) {
+    $fields[] = $field->machine_name;
+  } // foreach
+
+  return $fields;
+
+} // data_engine_db_field_names_from_table
+
+/**
+ * Adds table fields to query.
+ */
+function data_engine_db_add_table_fields_to_query($table, $query) {
+  
+  $fields = data_engine_db_field_names_from_table($table);
+
+  foreach ($fields as $field) {
+    $query->addField($table->title, $field, $table->title . DATA_ENGINE_DB_PLACEHOLDER . $field);
+  } // foreach
+  
+} // data_engine_db_add_table_fields_to_query
+
+/**
+ * Returns field machine and human names for a given dataset.
+ */
+function data_engine_db_fields_from_dataset($node, $types = FALSE) {
+
+  static $fields = array();
+  
+  if (!isset($fields[$node->nid])) {
+
+    $wrapper = entity_metadata_wrapper('node', $node);
+    $info = json_decode($wrapper->field_query_information->value());
+  
+    foreach ($info->tables as $table) {
+  
+      foreach ($table->fields as $field) {
+  
+        if ($types === FALSE || in_array($field->data_type, $types)) {
+  
+          $human_readable_name = ($field->verbose_name) ? $field->verbose_name : $field->field_name;
+          $fields[$node->nid][$table->title . '.' . $field->machine_name] = $human_readable_name;
+  
+        } // if
+  
+      } // foreach
+  
+    } // foreach
+
+  } // if
+
+  return $fields[$node->nid];
+
+} // data_engine_db_fields_from_dataset
+
+/**
+ * Returns field machine name of primary key for a given dataset.
+ */
+function data_engine_db_index_field_from_dataset($node) {
+
+  $wrapper = entity_metadata_wrapper('node', $node);
+  $info = json_decode($wrapper->field_query_information->value());
+
+  list($index_table_id, $index_field) = explode('.', $info->metadata->fkeys[0]);
+
+  foreach ($info->tables as $table) {
+
+    if ($table->id == $index_table_id) {
+      return $table->title . '.' . $index_field;
+    } // if
+
+  } // foreach
+
+  return FALSE;
+
+} // data_engine_db_index_field_from_dataset
+
+/**
+ * Returns geo data from dataset, for mapping.
+ */
+function data_engine_db_geo_records_from_node($node, $start = FALSE, $limit = FALSE) {
+
+  try {
+
+    $records = array();
+
+    $wrapper = entity_metadata_wrapper('node', $node);
+    $info = json_decode($wrapper->field_query_information->value());
+
+    $geo_table = $info->geo_table;
+
+    $query = data_engine_db_geo_query_from_node($node);
+
+    db_set_active('data');
+
+    $query->addExpression('ST_AsGeoJSON(' . $geo_table->title . '.geom)', 'geojson');
+
+    if ($start !== FALSE && $limit !== FALSE) {
+      $query->range($start, $limit);
+    } // if
+
+    db_set_active('default');
+
+    return data_engine_db_query_to_records($query);
+
+  } // try
+  catch (Exception $e) {
+
+    db_set_active('default');
+    watchdog('data_engine_db', 'DB Error: ' . $e->getMessage() .
+      ' [NID: ' . $node->nid . '; Line: ' . $e->getLine() . '; File: ' . $e->getFile() . ']' .
+      "\n" . $e->getTraceAsString(), array(), WATCHDOG_ERROR);
+    return FALSE;
+
+  } // catch
+
+} // data_engine_db_geo_records_from_node
+
+/**
+ * Returns geo bounds from dataset, for mapping.
+ */
+function data_engine_db_geo_bounds_from_node($node) {
+
+  try {
+
+    $records = array();
+
+    $wrapper = entity_metadata_wrapper('node', $node);
+    $info = json_decode($wrapper->field_query_information->value());
+
+    $geo_table = $info->geo_table;
+
+    $query = data_engine_db_geo_query_from_node($node, TRUE);
+
+    db_set_active('data');
+
+    $query->addExpression('ST_AsGeoJSON(ST_Envelope(ST_Union(' . $geo_table->title . '.geom)))', 'geojson');
+
+    db_set_active('default');
+
+    $result = data_engine_db_query_to_records($query);
+
+    return $result[0]['geojson'];
+
+  } // try
+  catch (Exception $e) {
+
+    db_set_active('default');
+    watchdog('data_engine_db', 'DB Error: ' . $e->getMessage() .
+      ' [NID: ' . $node->nid . '; Line: ' . $e->getLine() . '; File: ' . $e->getFile() . ']' .
+      "\n" . $e->getTraceAsString(), array(), WATCHDOG_ERROR);
+    return FALSE;
+
+  } // catch
+
+} // data_engine_db_geo_bounds_from_node
+
+/**
+ * Returns geo bounds from dataset, for mapping.
+ */
+function data_engine_db_geo_center_from_node($node) {
+
+  try {
+
+    $records = array();
+
+    $wrapper = entity_metadata_wrapper('node', $node);
+    $info = json_decode($wrapper->field_query_information->value());
+
+    $geo_table = $info->geo_table;
+
+    $query = data_engine_db_geo_query_from_node($node, TRUE);
+
+    db_set_active('data');
+
+    $query->addExpression('ST_AsGeoJSON(ST_Centroid(ST_Union(' . $geo_table->title . '.geom)))', 'geojson');
+
+    db_set_active('default');
+
+    $result = data_engine_db_query_to_records($query);
+
+    return $result[0]['geojson'];
+
+  } // try
+  catch (Exception $e) {
+
+    db_set_active('default');
+    watchdog('data_engine_db', 'DB Error: ' . $e->getMessage() .
+      ' [NID: ' . $node->nid . '; Line: ' . $e->getLine() . '; File: ' . $e->getFile() . ']' .
+      "\n" . $e->getTraceAsString(), array(), WATCHDOG_ERROR);
+    return FALSE;
+
+  } // catch
+
+} // data_engine_db_geo_center_from_node
+
+/**
+ * Takes a query, returns records in a standard format.
+ */
+function data_engine_db_query_to_records($query) {
+
+  // Try cache first.
+
+  $query_text = $query . '';
+  $cache_key = 'data_engine_db:' . md5($query_text);
+  $cache = cache_get($cache_key);
+  
+  if ($cache) {
+    return $cache->data;
+  } // if
+
+  try {
+
+    $records = array();
+  
+    db_set_active('data');
+  
+    $result = $query->execute();
+    foreach ($result as $record) {
+  
+      $record_array = (array) $record;
+      $altered_array = array();
+  
+      foreach ($record_array as $key => $value) {
+        $altered_array[str_replace(DATA_ENGINE_DB_PLACEHOLDER, '.', $key)] = $value;
+      } // foreach
+  
+      $records[] = $altered_array;
+  
+    } // foreach
+
+    db_set_active('default');
+
+    // Cache for 24 hours.
+
+    cache_set($cache_key, $records, 'cache', REQUEST_TIME + 60 * 60 * 24);
+  
+    return $records;
+
+  } // try
+  catch (Exception $e) {
+
+    db_set_active('default');
+    watchdog('data_engine_db', 'DB Error: ' . $e->getMessage() .
+      ' [Query: ' . $query . '; Line: ' . $e->getLine() . '; File: ' . $e->getFile() . ']' .
+      "\n" . $e->getTraceAsString(), array(), WATCHDOG_ERROR);
+    return FALSE;
+
+  } // catch
+
+} // data_engine_db_query_to_records
+
+/**
+ * Returns a list of NIDs within given bounds.
+ */
+function data_engine_db_get_datasets_within_bounds($bounds_string) {
+  
+  // Try cache first.
+
+  $query_text = $query . '';
+  $cache_key = 'data_engine_db:datasets_within_bounds:' . md5($bounds_string);
+  $cache = cache_get($cache_key);
+  
+  if ($cache) {
+    return $cache->data;
+  } // if
+  
+  $nids = array();
+  $nodes = data_engine_db_dataset_nodes();
+
+  foreach ($nodes as $node) {
+    
+    if (data_engine_db_dataset_count_within_bounds($node, $bounds_string) > 0) {
+      $nids[] = $node->nid;
+    } // if
+    
+  } // foreach
+
+  // Cache for 24 hours.
+
+  cache_set($cache_key, $nids, 'cache', REQUEST_TIME + 60 * 60 * 24);
+  
+  return $nids;
+  
+} // data_engine_db_get_datasets_within_bounds
+
+/**
+ * Determines if given dataset node is within bounds by
+ * searching the geo table.
+ */
+function data_engine_db_dataset_count_within_bounds($node, $bounds_string) {
+  
+  try {  
+
+    $edges = explode(',', $bounds_string);
+    $linestring = 'LINESTRING(' . $edges[0] . ' ' . $edges[1] . ',' . $edges[2] . ' ' . $edges[3] . ')';
+    
+    $wrapper = entity_metadata_wrapper('node', $node);
+    $info = json_decode($wrapper->field_query_information->value());
+    
+    $geo_table = $info->geo_table;
+  
+    $query = data_engine_db_geo_query_from_node($node, TRUE);
+  
+    db_set_active('data');
+  
+    $query->addField($geo_table->title, 'geom', 'geom');
+    $query->where("ST_Intersects(
+      ST_GeomFromText(
+        ST_AsText(
+          ST_Envelope('" . $linestring . "'::geometry)
+        ), 4269
+      ), ST_Transform(" . $geo_table->title . ".geom, 4269)
+    )");
+    
+    $count = $query->countQuery()->execute()->fetchField();
+  
+    db_set_active('default');
+  
+    return $count;
+    
+  } // try
+  catch (Exception $e) {
+
+    db_set_active('default');
+    watchdog('data_engine_db', 'DB Error: ' . $e->getMessage() .
+      ' [Query: ' . $query . '; Line: ' . $e->getLine() . '; File: ' . $e->getFile() . ']' .
+      "\n" . $e->getTraceAsString(), array(), WATCHDOG_ERROR);
+    return 0;
+
+  } // catch
+    
+} // data_engine_db_dataset_count_within_bounds

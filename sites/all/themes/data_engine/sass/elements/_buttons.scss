@@ -1,0 +1,126 @@
+//
+// @file
+// Button and link styles.
+// ----------------------------------------------------------------------------
+
+// Primary buttons
+.button-primary {
+  @extend %button;
+  @extend %button-small;
+  @extend %button-primary;
+  margin-bottom: rhythm(1);
+}
+
+//@todo refactor .button-primary to use .button-primary.
+.button--primary { @extend .button-primary; }
+
+.form-actions .button--primary {
+  margin-right: $w-gutter-half;
+}
+
+.button--tertiary {
+  @extend %button;
+  @extend %button-small;
+  margin-bottom: rhythm(1);
+  border-color: transparent; // Hide border but maintain size and space.
+}
+
+.button-edit,
+.button-download {
+  @extend %button;
+  @extend %button-small;
+  @extend %button-primary;
+}
+
+.button--preview-data,
+.button--preview-map,
+.button-remove,
+.button-add {
+  @extend %button;
+  @extend %button-small;
+  border-color: transparent;
+  color: $gray-dark;
+}
+
+.button--add-another {
+  @extend %button;
+  @extend %button-small;
+  @extend %button-white;
+}
+
+.button--learn-more {
+  @extend %button;
+  @extend %button-medium;
+  padding-right: .5em;
+  border: none;
+  margin-top: rhythm(4, $fs-l);
+  color: $white;
+  background-color: blend-overlay(rgba($black, .9), $red);
+  font-weight: 700;
+
+  &:hover {
+    background-color: blend-multiply(rgba($black, .4), $red);
+    color: $white;
+  }
+
+  &:visited,
+  &:active { color: $white; }
+}
+
+.button--call-to-action {
+  @include adjust-font-size-to($fs-xl, 4, $fs-l);
+  padding: 0 .5em;
+  font-family: $tertiary-typeface;
+
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+.button--find {
+  padding-right: .75em;
+  border-right: 1px $gray-light solid;
+}
+
+.button--sign-in,
+.button--sign-out {
+  @extend %button;
+  @extend %button-small;
+  @extend %button-primary;
+}
+
+.button--share {
+  margin: 0 1em;
+  font-family: $secondary-typeface;
+}
+
+.button--visualize {
+  @extend %button;
+  @extend %button-medium;
+  @extend %button-primary;
+}
+
+.button--view-all {
+  @extend %button;
+  @extend %button-medium;
+  @extend %button-primary;
+}
+
+input.button--abort {
+  @include text-shadow(none);
+  background-color: transparent;
+  background-image: none;
+  border-color: transparent;
+  color: $gray-dark;
+
+  &:hover {
+    background-color: transparent;
+    background-image: none;
+    color: $gray-darkest;
+  }
+}
+
+.flag-message {
+  font-family: $sans-typeface;
+  background-color: $white;
+}

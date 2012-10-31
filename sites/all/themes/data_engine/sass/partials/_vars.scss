@@ -1,0 +1,167 @@
+//
+// @file
+// Variables for use throughout this compass project.
+//-----------------------------------------------------------------------------
+
+
+// IE Support
+//-----------------------------------------------------------------------------
+
+// Setting this to false will result in smaller output, but no support for ie6 hacks.
+$legacy-support-for-ie6: false; // Overrides default set in Support partial.
+
+// Setting this to false will result in smaller output, but no support for ie7 hacks.
+$legacy-support-for-ie7: true; // Overrides default set in Support partial.
+
+
+// IE Support
+//-----------------------------------------------------------------------------
+
+// Setting this to false will result in smaller output, but no support for ie6 hacks.
+// $legacy-support-for-ie6: true; // Overrides default set in Support partial.
+
+// Setting this to false will result in smaller output, but no support for ie7 hacks.
+$legacy-support-for-ie7: true; // Overrides default set in Support partial.
+
+
+//  Colors
+//-----------------------------------------------------------------------------
+
+$white:             #ffffff;
+$black:             #000000;
+
+$gray-white:        #f0f1f2;
+$gray-lightest:     #e1e3e6;
+$gray-lighter:      #d2d5d9;
+$gray-light:        #b2b2b2;
+$gray:              #909090;
+$gray-dark:         #666;
+$gray-darker:       #5a5a5a;
+$gray-darkest:      #4a4a4a;
+$gray-black:        #181818;
+
+$red:               #cb3231;
+$red-dark:          #651918;
+
+$orange-white:      #fdf6e9;
+$orange-lightest:   #fff0d1;
+$orange-lighter:    #ffe7b7;
+$orange-light:      #ff9933;
+$orange:            #f27b25;
+$orange-dark:       #e55c16;
+
+$green-lightest:    #DCF5B1;
+$green-lighter:     #b1d233;
+$green:             #9cc524;
+$green-dark:        #8cbc1a;
+$green-darker:      #78b00d;
+$green-darkest:     #5e9a08;
+
+$blue-white:        #ecf3f7;
+$blue-lightest:     #c9e7f6;
+$blue-lighter:      #93ceed;
+$blue-light:        #629cdb;
+$blue:              #4168b6;
+$blue-dark:         #314e88;
+$blue-darker:       #254590;
+$blue-darkest:      #0f2840;
+$blue-black:        #091827;
+
+$royal-white:        #ecf3f7;
+$royal-lightest:     #c9e7f6;
+$royal-lighter:      #93ceed;
+$royal-light:        #629cdb;
+$royal:              #4168b6;
+$royal-dark:         #314e88;
+$royal-darker:       #254590;
+$royal-darkest:      #0f2840;
+$royal-black:        #091827;
+
+
+$primary-color:     $gray-dark;       // Default body copy color
+$secondary-color:   $orange;     // Default link color
+$accent-color:      $red;     // Default heading color
+$warning-color:     $red;             // Default error and required color
+$border-color:      $gray-lighter;    // Default error and required color
+
+
+//  Typography
+//-----------------------------------------------------------------------------
+
+//  Typefaces
+$primary-typeface:    Georgia, "Droid Serif", serif;
+$secondary-typeface:  'Museo', Helvetica, Arial, san-serif;
+$tertiary-typeface:   'Museo-Slab', Helvetica, Arial, san-serif;
+$sans-typeface:       Helvetica, Arial, san-serif;
+$symbolset:           "SSStandard";
+$base-font-family:    $primary-typeface;
+
+//  Font sizes
+$fs-xxs:     12px;
+$fs-xs:      13px;
+$fs-s:       14px;
+$fs-m:       16px;
+$fs-l:       18px;
+$fs-xl:      24px;
+$fs-xxl:     36px;
+$fs-xxxl:    42px;
+$fs-xxxxl:   60px;
+$fs-xxxxxl:  72px;
+
+$h1-font-size: $fs-xxxl !default;
+$h2-font-size: $fs-xxl !default;
+$h3-font-size: $fs-xl !default;
+$h4-font-size: $fs-m !default;
+$h5-font-size: $fs-s !default;
+$h6-font-size: $fs-xxs !default;
+
+// The amount lists and blockquotes are indented.
+$indent-amount: 48px !default;
+
+// Vertical Ryhthm
+$base-font-size:    16px;        // Font-size of your body copy.
+$base-line-height:  6px;         // Setting the base-line-height half.
+                                 // the height of the desired body copy.
+                                 // line-height helps prevent sparse.
+                                 // leading at different font-sizes.
+
+
+// Zen Grids
+//-----------------------------------------------------------------------------
+
+$zen-column-count: 8;
+$zen-gutter-width: 36px;
+$box-sizing-polyfill-path: "/sites/all/themes/center/boxsizing.htc";
+
+
+//  Layout
+//-----------------------------------------------------------------------------
+
+$w-full: 1104px;
+$w-content: 620px;
+$w-sidebar: 320px;
+$w-sidebar-first: 320px;
+$w-gutter: $zen-gutter-width;
+$w-gutter-half: $zen-gutter-width / 2;
+
+
+//  Breakpoints
+//-----------------------------------------------------------------------------
+
+$mobile: 480px;
+$mobile-wide: 600px;
+$tablet: 768px;
+$tablet-wide: 992px;
+$desktop: 1080px;
+$desktop-wide: 1382px;
+
+
+//  CSS3
+//-----------------------------------------------------------------------------
+
+$default-transition-duration: .15s;
+
+// Text shadow defaults
+$default-text-shadow-color: rgba($gray-dark, .6);
+$default-text-shadow-blur: 1px;
+$default-text-shadow-v-offset: 1px;

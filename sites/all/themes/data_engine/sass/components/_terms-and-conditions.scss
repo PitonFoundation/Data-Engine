@@ -1,0 +1,33 @@
+.form-item-field-terms-und {
+  input {
+    margin-right: 1em;
+  }
+
+  .description {
+    @include rhythm-borders(1px, 2, $fs-xs);
+    overflow-y: scroll;
+    height: rhythm(60, $fs-xs);
+    max-width: 33em;
+    //margin-top: 0;
+    margin-left: 0;
+
+    > ol {
+      padding-left: $w-gutter-half;
+    }
+
+    > ol > li {
+      margin-bottom: rhythm(1, $fs-xs);
+    }
+  }
+}
+
+#user-register-form {
+  .form-item-field-terms-und {
+    input {
+      position: relative;
+      float: left;
+      top: .125em;
+    }
+  }
+}
+

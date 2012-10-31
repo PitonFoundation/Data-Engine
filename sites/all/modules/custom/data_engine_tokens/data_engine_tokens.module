@@ -1,0 +1,80 @@
+<?php
+
+/**
+ * Implements hook_token_info().
+ */
+function data_engine_tokens_token_info() {
+
+  $info['tokens']['node']['record-count'] = array(
+    'name' => t('Record Count'),
+    'description' => t('The count of records in the dataset'),
+  );
+  
+  $info['tokens']['node']['downloads-flag'] = array(
+    'name' => t('Add to Downloads Flag'),
+    'description' => t('Flag link for adding to downloads'),
+  );
+
+  return $info;
+
+} // data_engine_tokens_token_info
+
+/**
+ * Implements hook_tokens().
+ */
+function data_engine_tokens_tokens($type, $tokens, array $data = array(), array $options = array()) {
+
+  $replacements = array();
+
+  if ($type == 'node') {
+
+    foreach ($tokens as $name => $original) {
+
+      if ($name == 'record-count') {
+
+        $node = $data['node'];
+        $count = '';
+
+        if ($node->type == 'dataset') {
+
+          $number = data_engine_db_record_count_from_node($node);
+
+          switch ($number) {
+    
+            case 1:
+              $count = t('@count record', array('@count' => $number));
+              break;
+
+            default:
+              $count = t('@count records', array('@count' => number_format($number, 0, '.', ',')));
+              break;
+
+          } // switch
+
+        } // if
+  
+        $replacements[$original] = $count;
+
+      } // if
+      elseif ($name == 'downloads-flag') {
+        
+        $node = $data['node'];
+        $flag_link = '';
+        
+        if ($node->type == 'dataset') {
+        
+          $flag_link = flag_create_link('dataset_downloads', $node->nid);
+
+        } // if
+
+        $replacements[$original] = $count;
+
+      } // elseif
+
+    } // foreach
+
+  } // if
+
+  return $replacements;
+
+} // data_engine_tokens_tokens

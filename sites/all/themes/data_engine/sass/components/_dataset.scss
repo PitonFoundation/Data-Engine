@@ -1,0 +1,128 @@
+//
+// @file
+// Dataset styles.
+// ----------------------------------------------------------------------------
+
+// PREVIEW
+.page-api-dataset {
+  // Fix table getting cut off.
+  #main > .page-width {
+    @include box-sizing(border-box);
+    overflow-x: scroll;
+    width: 100%;
+  }
+}
+
+.node-dataset {
+  .button--visualize,
+  .flag-link-toggle {
+    display: block;
+  }
+
+  .field-name-share-links {
+    float: right;
+    padding: 0 .5em;
+    border-left: 1px solid $gray-lighter;
+    position: relative;
+    top: .25em;
+  }
+
+  .field-name-preview-data,
+  .field-name-preview-map,
+  .field-name-dataset-downloads-flag {
+    float: left;
+    clear: left;
+    padding-left: 0;
+    margin-bottom: rhythm(1, $fs-s);
+  }
+
+  .button--preview-map,
+  .button--preview-data,
+  .button--download {
+    @include adjust-font-size-to($fs-s);
+  }
+
+  .field-name-preview-data,
+  .field-name-preview-map {
+    width: 50%;
+  }
+}
+
+// Dataset Full
+.node-dataset.view-mode-full {
+  $zen-column-count: 8;
+  @include zen-grid-container;
+
+  > .ds-content {
+    @include zen-grid-item(4, 1);
+    padding-left: 0;
+  }
+
+  > .ds-footer {
+    @include zen-grid-item(2, 1, right);
+    padding-right: 0;
+    padding-left: 0;
+    text-align: center;
+  }
+
+  > .ds-aside {
+    @include zen-grid-item(2, 3, right);
+  }
+
+  > .ds-figure {
+    @include zen-grid-item(4, 1, right);
+    @include zen-clear(right);
+  }
+}
+
+// Dataset Teaser
+.node-dataset.view-mode-teaser {
+  $zen-column-count: 6;
+  @include zen-grid-container;
+
+  > .ds-content {
+    @include zen-grid-item(4, 1);
+    padding-left: 0;
+  }
+
+  > .ds-footer {
+    @include zen-grid-item(2, 1, right);
+    padding-top: rhythm(2);
+    padding-right: 0;
+    text-align: center;
+  }
+
+  .field-name-body {
+    margin-top: rhythm(2, $fs-s);
+  }
+
+
+  // TAGS @todo abstract this
+  .field-name-field-data-tags {
+    > .field-label {
+      @include adjust-font-size-to(10px);
+      margin-right: ce(5px, 10px);
+      color: $gray-light;
+    }
+
+    > .field-items {
+      @include adjust-leading-to(3);
+      display: inline;
+      padding: 0;
+    }
+
+    .field-item {
+      display: inline;
+      @include adjust-font-size-to($fs-xs);
+
+      > a {
+        @extend %gray-link;
+        padding: 0 ce(5px, $fs-xs);
+      }
+    }
+  }
+
+  .tag {
+    margin-right: $w-gutter / 4;
+  }
+}

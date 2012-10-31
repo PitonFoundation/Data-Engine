@@ -1,0 +1,47 @@
+//
+// @file
+// Block specific styles.
+// ----------------------------------------------------------------------------
+
+#block-data-engine-user-my-downloads-link {
+  position: absolute;
+  right: 0;
+  top: -1 * rhythm(12);
+}
+
+// What is Data Engine.
+#block-block-3 {
+  // Make room for image.
+  padding-right: 655px;
+  padding-bottom: rhythm(4);
+  background: transparent url('../images/featured.png') top right no-repeat;
+
+  > .block-title {
+    @include adjust-font-size-to($fs-xxxl);
+    color: $white;
+    font-family: $tertiary-typeface;
+  }
+
+  > .block-content {
+    @include adjust-font-size-to($fs-l);
+
+    > p { margin-bottom: rhythm(4, $fs-l); }
+  }
+}
+
+// Call to Action.
+#block-block-4 {
+  text-align: center;
+
+  > .block-title {
+    @include adjust-font-size-to($fs-xxxl);
+    margin-top: rhythm(8, $fs-xxxl);
+    font-weight: 300;
+  }
+
+  > .block-content {
+    @include adjust-font-size-to($fs-l);
+
+    > p { margin-bottom: rhythm(4, $fs-l); }
+  }
+}

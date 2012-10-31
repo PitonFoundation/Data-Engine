@@ -1,0 +1,52 @@
+//
+// @file
+// Styleguide module styles.
+// ----------------------------------------------------------------------------
+
+.page-admin-appearance-styleguide {
+  #block-system-main {
+    // Create a gutter for the nav to sit in.
+    padding-left: 30%;
+  }
+}
+
+#styleguide-header {
+  position: absolute;
+  width: 25%;
+  margin-left: -30%;
+  background-color: transparent;
+  border: none;
+
+  .item-list {
+    float: none;
+    width: 100%;
+  }
+
+  h3 {
+    @include adjust-font-size-to($fs-xs);
+    margin: 0;
+  }
+
+  ul {
+    @extend .nav;
+    margin: 0 0 rhythm(1);
+  }
+
+  a {
+    @extend %button;
+    @extend %button-white;
+    @include adjust-font-size-to($fs-s);
+    display: block;
+    padding: 2px $w-gutter-half;
+  }
+}
+
+h2.styleguide {
+  @include adjust-font-size-to($fs-l);
+  margin: rhythm(2, $fs-l) 0 0;
+}
+
+div.styleguide {
+  padding: rhythm(2) 0;
+  border-bottom: none;
+}

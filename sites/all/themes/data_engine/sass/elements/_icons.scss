@@ -1,0 +1,29 @@
+//
+// @file
+// Icon specific styles.
+// ----------------------------------------------------------------------------
+
+.ss-icon {
+  font-size: .75em;
+  margin-right: .5em;
+  position: relative;
+  top: .0125em;
+}
+
+.ss-database,
+.ss-delete,
+.ss-download,
+.ss-like,
+.ss-mail,
+.ss-map,
+.ss-plus,
+.ss-write,
+.ss-star,
+.ss-link {
+  &:before {
+    font-size: .75em;
+    margin-right: .5em;
+    position: relative;
+    top: .0125em;
+  }
+}

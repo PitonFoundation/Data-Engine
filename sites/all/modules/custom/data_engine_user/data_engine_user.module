@@ -1,0 +1,115 @@
+<?php
+/**
+ * Implements hook_block_info().
+ */
+function data_engine_user_block_info() {
+  // Create a block that shows user info based on url arg.
+  $blocks['user_info'] = array(
+    'info' => t('User Information'),
+    'cache' => DRUPAL_NO_CACHE
+  );
+
+  // Create a block for a link to my downloads.
+  $blocks['my_downloads_link'] = array(
+    'info' => t('My Downloads link'),
+    'cache' => DRUPAL_NO_CACHE
+  );
+  
+  $blocks['my_api_key'] = array(
+    'info' => t('My API key'),
+    'cache' => DRUPAL_NO_CACHE
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function data_engine_user_block_view($delta = '') {
+
+  global $user;
+
+  $block = array();
+
+  switch ($delta) {
+    case 'user_info':
+      global $user;
+
+      // We don't want a title
+      $block['subject'] = NULL;
+      // Figure out which user to load.
+      // If viewing a specific profile page load that user.
+      if (arg(0) == 'user' && is_numeric(arg(1))) {
+        $uid = arg(1);
+      } else {
+        // Otherwise load the current user.
+        $uid = $user->uid;
+      }
+      $block['content']['user_info'] = user_view(user_load($uid), 'account_sidebar');
+
+      // If the viewing own profile or may administer users, add an edit link.
+      if ($uid == $user->uid || user_access('administer users')) {
+        $block['content']['edit_link'] = array(
+          '#type' => 'link',
+          '#title' => t('Edit profile'),
+          '#href' => 'user/' . $uid . '/edit',
+          '#options' => array(
+            'attributes' => array(
+              'class' => array(
+                'link-edit-profile',
+                'ss-write',
+              ),
+            ),
+          ),
+        );
+      }
+      break;
+    case 'my_downloads_link':
+      // We don't want a title
+      $block['subject'] = NULL;
+      // Figure out which user to load.
+      $block['content']['edit_link'] = array(
+        '#type' => 'link',
+        '#title' => t('My Downloads'),
+        '#href' => 'my-downloads',
+        '#options' => array(
+          'attributes' => array(
+            'class' => array(
+              'button-primary',
+            ),
+          ),
+        ),
+      );
+      break;
+    case 'my_api_key':
+      // We don't want a title
+      $block['subject'] = NULL;
+      $key = data_engine_api_key_for_acccount($user);
+      $block['content'] = $key;
+      break;
+
+  }
+  return $block;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter(&$form, &$form_state, $form_id)
+ * mynodetype
+ */
+function data_engine_user_form_alter(&$form, &$form_state, $form_id) {
+
+  if ($form_id == "user_profile_form") {
+
+    $form['#submit'][] = 'data_engine_user_form_submit';
+
+  } //if
+
+} //data_engine_user_form_alter
+
+// custom callback
+function data_engine_user_form_submit($form, &$form_state) {
+
+  $form_state['redirect'] = 'user';
+
+} //data_engine_user_form_submit

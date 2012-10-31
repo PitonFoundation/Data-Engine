@@ -1,0 +1,204 @@
+//
+// @file
+// Views specific styles.
+//
+// If styles can be used across views, they should
+// go in elements/_lists.scss instead.
+// ----------------------------------------------------------------------------
+
+// @todo find/browse datasets: child lists for taxonomy categories
+.page-find, .page-visualize {
+  ul.children {
+    margin-left: 2em;
+  }
+  input[type="checkbox"], label {
+    display: inline-block;
+  }
+  label {
+    cursor: pointer;
+  }
+}
+// end @todo
+
+// HOME
+.front .page-title {
+  @include text-ruled;
+  @include adjust-font-size-to($fs-xxl);
+  margin-bottom: rhythm(4, $fs-xxl);
+  font-family: $secondary-typeface;
+  font-weight: 300;
+}
+
+.view-visualizations-front {
+  @include zen-grid-container;
+  $zen-column-count: 8;
+
+  > .view-filters {
+    @include zen-grid-item(2, 1);
+    padding-left: 0;
+  }
+
+  > .view-content,
+  > .view-empty,
+  > .view-footer {
+    @include zen-grid-item(6, 1, right);
+    padding-right: 0;
+  }
+
+  > .view-footer {
+    @include zen-clear(right);
+    text-align: center;
+    padding: rhythm(4) 0;
+  }
+
+  .views-exposed-form {
+    padding: 0;
+    background-color: transparent;
+  }
+
+  .form-type-select {
+    margin-bottom: rhythm(4);
+  }
+
+  .no-bullets {
+    @include nup-container;
+  }
+
+  .views-row {
+    @include nup-base;
+    @include nup-item;
+  }
+
+  .views-exposed-widget,
+  .views-widget {
+    display: block;
+    margin-right: 0;
+  }
+
+  label {
+    margin-bottom: 0;
+  }
+
+  #edit-term-node-tid-depth-wrapper > label {
+    @extend .block-title;
+  }
+}
+
+// Datasets front
+.view-datasets-front {
+  .view-footer {
+    margin-top: rhythm(4);
+    text-align: center;
+  }
+}
+
+// FIND
+
+.view-Find {
+  .view-header {
+    float: left;
+    margin-bottom: rhythm(2, $fs-xs);
+    @include adjust-font-size-to($fs-xs);
+    font-family: $secondary-typeface;
+  }
+
+  .pager {
+    float: right;
+  }
+
+  .pager--top {
+    position: absolute;
+    top: -1 * rhythm(2);
+    right: 0;
+  }
+
+  .view-content {
+    clear: both;
+  }
+}
+
+// Find filters
+.data-engine-browse-filters {
+  padding-top: rhythm(1);
+
+  .search {
+    margin-bottom: rhythm(1);
+
+    input {
+      width: 100%;
+    }
+  }
+
+  #leaflet-map {
+    height: rhythm(34) !important;
+  }
+}
+
+// Visualizations
+#block-views-3a09a3b1541dfa00156f2340f71e3f69 {
+  margin-bottom: rhythm(8);
+}
+
+.view-visualizations {
+  .pager--top {
+    position: absolute;
+    top: -1 * rhythm(2);
+    right: 0;
+  }
+
+  .pager {
+    float: right;
+  }
+}
+
+// Visualize
+.view-id-visualizations {
+  .button--visualize {
+    position: absolute;
+    top: -1 * rhythm(10, $fs-l);
+    right: 0;
+  }
+
+  .no-bullets {
+    @include nup-container;
+  }
+
+  .views-row {
+    @include nup-base;
+    @include nup-item;
+  }
+}
+
+td.views-field-edit-node,
+th.views-field-edit-node {
+  text-align: right;
+  padding-right: 0;
+}
+
+// Loading indicator
+.view {
+  position: relative;
+
+  .loading {
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    z-index: 2;
+    // Use an image to mimic 60% white.
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBNYWNpbnRvc2giIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6NDdGRTE1NjYwRTA2MTFFMjk3N0ZFM0E0QTc3ODY0QUYiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6QTJEM0Y5NkMwRTQ1MTFFMjk3N0ZFM0E0QTc3ODY0QUYiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo0N0ZFMTU2NDBFMDYxMUUyOTc3RkUzQTRBNzc4NjRBRiIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo0N0ZFMTU2NTBFMDYxMUUyOTc3RkUzQTRBNzc4NjRBRiIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Pm6C3bUAAAAQSURBVHjaYvj///9MgAADAAmVA5fPgfzYAAAAAElFTkSuQmCC);
+
+    > img {
+      @include border-radius(4px);
+      margin-left: -28px;
+      padding: 4px;
+      position:  absolute;
+      top: rhythm(8);
+      left: 50%;
+      background-color: #212121;
+    }
+  }
+
+  > ul {
+    z-index: 1;
+  }
+}

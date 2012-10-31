@@ -1,0 +1,36 @@
+//
+// @file
+// Feedback form styles.
+// ----------------------------------------------------------------------------
+
+#webform-client-form-20 {
+  @extend %form-layout-inline;
+  padding-top: rhythm(3);
+
+  #webform-component-reason-for-contacting {
+    > label {
+      width: auto;
+      margin-left: 0;
+      margin-right: .25em;
+    }
+  }
+}
+
+#webform-component-reason-for-contacting {
+  @include adjust-font-size-to($fs-xl);
+
+  .form-required {
+    font-size: .5em;
+    vertical-align: .825em;
+  }
+}
+
+#uniform-edit-submitted-reason-for-contacting {
+  position: relative;
+  top: -.25em;
+  font-size: 15px;
+}
+
+#edit-submitted-reason-for-contacting {
+  font-size: 15px;
+}

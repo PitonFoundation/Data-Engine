@@ -1,0 +1,30 @@
+<?php
+/**
+ * Implements hook_form_alter().
+ */
+function data_engine_visualization_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'visualization_node_form') {
+    if ($form['options']['status']['#default_value'] == 0) {
+      $form['publish'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Publish this visualization'),
+        '#weight' => 10
+      );
+      $form['#submit'][] = 'data_engine_visualization_form_submit';
+    }
+  }
+}
+
+/**
+ * Implements hook_form_submit().
+ */
+function data_engine_visualization_form_submit($form, &$form_state) {
+  if (isset($form_state['values']['publish'])) {
+    if ($form_state['values']['publish']) {
+      $form_state['values']['status'] = 1;
+    }
+    else {
+      $form_state['values']['status'] = 0;
+    }
+  }
+}

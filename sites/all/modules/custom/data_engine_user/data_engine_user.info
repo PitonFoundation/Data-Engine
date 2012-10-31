@@ -1,0 +1,4 @@
+name =  User
+package = Data Engine
+description = User customizations
+core = 7.x

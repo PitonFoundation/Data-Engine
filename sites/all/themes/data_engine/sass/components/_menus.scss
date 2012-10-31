@@ -1,0 +1,87 @@
+//
+// @file
+// Menu styles.
+// ----------------------------------------------------------------------------
+
+// MAIN MENU
+
+#block-menu-block-1 {
+  clear: both;
+}
+
+.nav--main {
+  @extend .nav;
+  @extend .nav-inline;
+
+  .nav-item > .nav-link {
+    @include adjust-font-size-to($fs-l);
+    font-family: $tertiary-typeface;
+    font-weight: 700;
+    margin-right: $w-gutter-half;
+    text-transform: uppercase;
+
+    &.active,
+    &.active-trail {
+      color: $orange;
+    }
+  }
+}
+
+
+// USER MENU
+
+#block-menu-block-3 {
+  float: right;
+}
+
+.nav--user {
+  @extend .nav;
+  @extend .nav-inline;
+
+  .nav-item {
+    @include adjust-font-size-to($fs-xs);
+
+    &:after {
+      content: " /";
+    }
+
+    &.last:after {
+      content: none;
+    }
+  }
+
+  .nav-item {
+    > .nav-link {
+      @include link-colors($gray, $white);
+      margin: 0 ($w-gutter-half / 2);
+      font-family: $tertiary-typeface;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    > .button--sign-in,
+    > .button--sign-out, {
+      color: $white;
+      display: inline;
+    }
+  }
+
+
+  .nav-link.active,
+  .nav-link.active-trail {
+    color: $white;
+  }
+}
+
+
+// FOOTER MENU
+
+.nav--footer {
+  @extend .nav;
+
+  .nav-item > .nav-link {
+    @include link-colors($gray, $white);
+    font-family: $tertiary-typeface;
+    font-weight: 700;
+  }
+}

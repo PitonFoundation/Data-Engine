@@ -1,0 +1,12 @@
+.code--embed {
+  @include adjust-font-size-to($fs-xs);
+  @include rhythm-borders(1px, 1, $fs-xs);
+  @include border-radius(4px);
+  padding-left: .5em;
+  padding-right: .5em;
+  border-color: $gray-light;
+  margin-bottom: rhythm(4, $fs-xs);
+  overflow-x: scroll;
+  white-space: nowrap;
+  background-color: $gray-white;
+}

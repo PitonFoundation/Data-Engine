@@ -1,0 +1,13 @@
+//
+// @file
+// IE8 and below specific styles.
+// ----------------------------------------------------------------------------
+
+#header {
+  h1 { float: left };  // Prevent logo from expanding the full width.
+}
+
+
+#block-search-form {
+  width: 13.4em;
+}

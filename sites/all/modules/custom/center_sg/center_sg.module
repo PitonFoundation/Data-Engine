@@ -1,0 +1,167 @@
+<?php
+
+/**
+ * Implements hook_styleguide().
+ */
+
+function center_sg_styleguide() {
+  $items['copy'] = array(
+    'title' => t('Body Copy'),
+    'content' => '<p class="intro">Intro Paragraph Style: It’s helpful to give your readers a quick introduction to the page.  That’s what this paragraph is all about.</p>
+      <h2>Section Heading (h2)</h2>
+      <p>Basic Paragraph Style: Lorem ipsum dolor si *45, consectetur adipisicin *75, sed do eiusmod *tempor incididunt ut labore et dolore magna aliqua.
+      <em>This shows emphasis</em> while <strong>this shows strong</strong>. Do you want to see what a link looks like? <a href="http://example.com">This is a link</a>. That\' pretty neat! </p>
+      <p><img src="http://placekitten.com/340/240" class="image-left"/>Ut enim ad minim veniam, quis nostrud exercitation nisi ut aliquip ex ea commodo consequat. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. </p>
+      <p><img src="http://placekitten.com/216/216" class="image-right"/>Ut enim ad minim veniam, quis nostrud exercitation nisi ut aliquip ex ea commodo consequat. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. </p>
+      <h3>Section Heading (h3)</h3>
+      <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. </p>
+      <h4>Section Heading (h4)</h4>
+      <blockquote> Blockquote Style: Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. </blockquote>
+      <p>Basic Paragraph Style: Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, this is a link quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. </p>
+      <h5>Section Heading (h5)</h5>
+      <p>Lorem ipsum dolor sit amet, this is a visited link consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. </p>
+      <h6>Section Heading (h6)</h6>
+      <p>Lorem ipsum dolor sit amet, this is a visited link consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. </p>
+      <ul>
+        <li>Unordered list Style: Ut enim ad minim veniam.</li>
+        <li>Quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. </li>
+        <li>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. </li>
+      </ul>
+      <ol>
+        <li>Unordered list Style: Ut enim ad minim veniam.</li>
+        <li>Quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. </li>
+        <li>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. </li>
+      </ol>',
+    'group' => t('Base'),
+  );
+  $items['nav'] = array(
+    'title' => t('Default'),
+    'content' => _center_sg_dummy_menu(),
+    'group' => t('Menus'),
+  );
+  $items['nav-stacked'] = array(
+    'title' => t('Stacked'),
+    'content' => _center_sg_dummy_menu('nav nav-stacked'),
+    'group' => t('Menus'),
+  );
+  $items['nav-inline'] = array(
+    'title' => t('Inline'),
+    'content' => _center_sg_dummy_menu('nav nav-inline'),
+    'group' => t('Menus'),
+  );
+  $items['nav-stacked-buttons'] = array(
+    'title' => t('Buttons - Stacked'),
+    'content' => _center_sg_dummy_menu('nav nav-stacked nav-buttons'),
+    'group' => t('Menus'),
+  );
+  $items['nav-inline-buttons'] = array(
+    'title' => t('Buttons - Inline'),
+    'content' => _center_sg_dummy_menu('nav nav-inline nav-buttons'),
+    'group' => t('Menus'),
+  );
+  $items['nav-stacked-tabs'] = array(
+    'title' => t('Tabs - Stacked'),
+    'content' => _center_sg_dummy_menu('nav nav-stacked nav-tabs'),
+    'group' => t('Menus'),
+  );
+  $items['nav-inline-tabs'] = array(
+    'title' => t('Tabs - Inline'),
+    'content' => _center_sg_dummy_menu('nav nav-inline nav-tabs'),
+    'group' => t('Menus'),
+  );
+  return $items;
+}
+
+
+/**
+ * Alter styleguide elements.
+ *
+ * @param &$items
+ *   An array of items to be displayed.
+ *
+ * @return
+ *   No return value. Modify $items by reference.
+ *
+ * @see hook_styleguide()
+ */
+function center_sg_styleguide_alter(&$items) {
+  // Add a class to the text test.
+  $items['text']['content'] = '<div class="mytestclass">' . $items['text']['content'] . '</div>';
+  // Remove the some styleguide defaults.
+  unset($items['text']);
+  unset($items['headings_text']);
+  unset($items['menu_tree']);
+  unset($items['a']);
+  unset($items['em']);
+  unset($items['strong']);
+  unset($items['ul_title']);
+  unset($items['ol_title']);
+  unset($items['image-inset-horizontal']);
+  unset($items['image-inset-vertical']);
+
+  // Move items to the base group
+  $items['headings']['group'] = 'Base';
+
+  // Move messages to their own group
+  $items['status-message']['group'] = 'Messages';
+  $items['warning-message']['group'] = 'Messages';
+  $items['error-message']['group'] = 'Messages';
+
+  // Clone tables
+  $items['table-combined'] =
+    $items['table-condensed'] =
+    $items['table-striped'] =
+    $items['table-borderless'] =
+    $items['table-bordered'] =
+    $items['table'];
+
+  $items['table-condensed']['title'] = 'Table - Condensed';
+  $items['table-condensed']['description'] = 'Classes: <code>.table--condensed</code>';
+  $items['table-condensed']['variables']['attributes'] = array(
+    'class' => array('table--condensed'),
+  );
+
+  $items['table-bordered']['title'] = 'Table - Bordered';
+  $items['table-bordered']['description'] = 'Classes: <code>.table--bordered</code>';
+  $items['table-bordered']['variables']['attributes'] = array(
+    'class' => array('table--bordered'),
+  );
+
+  $items['table-striped']['title'] = 'Table - Striped';
+  $items['table-striped']['description'] = 'Classes: <code>.table--striped</code>';
+  $items['table-striped']['variables']['attributes'] = array(
+    'class' => array('table--striped'),
+  );
+
+  $items['table-borderless']['title'] = 'Table - Borderless';
+  $items['table-borderless']['description'] = 'Classes: <code>.table--borderless</code>';
+  $items['table-borderless']['variables']['attributes'] = array(
+    'class' => array('table--borderless'),
+  );
+
+  $items['table-borderless']['title'] = 'Table - Borderless';
+  $items['table-borderless']['description'] = 'Classes: <code>.table--borderless</code>';
+  $items['table-borderless']['variables']['attributes'] = array(
+    'class' => array('table--borderless'),
+  );
+
+  $items['table-combined']['title'] = 'Table - Combined';
+  $items['table-combined']['description'] = 'Classes: <code>.table--striped .table--condensed .table--bordered</code>';
+  $items['table-combined']['variables']['attributes'] = array(
+    'class' => array(
+      'table--striped',
+      'table--bordered',
+      'table--condensed',
+    ),
+  );
+}
+
+function _center_sg_dummy_menu($classes = 'nav') {
+  $output = '<li class="first leaf nav-item"><a class="nav-link" title="First Link" href="/admin/dashboard">First Link</a></li>
+    <li class="nav-item"><a class="nav-link" title="Second Link" href="/admin/content">Second Link</a></li>
+    <li class="active-trail nav-item"><a class="active-trail nav-link active" title="Select and configure your themes." href="/admin/appearance">Active Trail</a></li>
+    <li class="last nav-item"><a class="nav-link" title="Last Link" href="/admin/structure">Last Link</a></li>
+    ';
+  $output = '<ul class="' . $classes . '">' . $output . '</ul>';
+  return $output;
+}

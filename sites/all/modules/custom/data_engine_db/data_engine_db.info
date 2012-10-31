@@ -1,0 +1,7 @@
+name = "Data Engine DB"
+package = Data Engine
+description = "Database functions for Data Engine"
+core = 7.x
+
+dependencies[] = entity
+dependencies[] = node

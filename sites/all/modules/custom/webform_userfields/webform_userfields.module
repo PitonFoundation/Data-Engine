@@ -1,0 +1,40 @@
+<?php
+
+/**
+ * @file
+ * Allows for use of user fields in webforms
+ */
+
+/**
+ * Implements hook_form_alter().
+ * Pre-fill fields in calendar signup (currently this is only included in Webform module for deprecated profile fields)
+ */
+function webform_userfields_form_alter(&$form, &$form_state, $form_id) {
+  if (substr($form_id, 0, 19) == 'webform_client_form' && user_is_logged_in()) {
+    global $user;
+    $account = user_load($user->uid);
+    webform_userfields_replace($form['submitted'],$account);
+  }
+}
+
+/**
+ * Recursive replacement to handle fields inside of fieldsets.
+ */
+function webform_userfields_replace(&$fields, &$account) {
+  foreach ($fields as &$field) {
+    if (isset($field['#type']) && $field['#type'] == 'fieldset') {
+      webform_userfields_replace($field,$account);
+    }
+    else if(isset($field['#default_value']) 
+            && (!empty($field['#webform_component']['value']))) {
+      // Do regular expression to extract information about substitutions
+      if (preg_match_all('%profile\[(field_.*?)\]%', $field['#webform_component']['value'], $extract, PREG_PATTERN_ORDER) > 0) {
+        $field['#default_value'] = $field['#webform_component']['value'];
+        foreach ($extract[1] as $key => $val) {
+          if ($item = field_get_items('user', $account, $val))
+            $field['#default_value'] = str_replace('%'.$extract[0][$key], $item[0]['value'], $field['#default_value']);
+        }
+      }
+    }
+  }
+}

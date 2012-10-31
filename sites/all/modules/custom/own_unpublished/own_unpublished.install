@@ -1,0 +1,19 @@
+<?php
+/**
+ * @file own_unpublished.install
+ * Contains install and update functions for own_unpublished.
+ */
+
+/**
+ * Implements hook_enable().
+ */
+function own_unpublished_enable() {
+  node_access_needs_rebuild(TRUE);
+}
+
+/**
+ * Implements hook_disable().
+ */
+function own_unpublished_disable() {
+  node_access_needs_rebuild(TRUE);
+}

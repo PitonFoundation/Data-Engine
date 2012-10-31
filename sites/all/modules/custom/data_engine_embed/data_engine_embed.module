@@ -1,0 +1,123 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function data_engine_embed_menu() {
+
+  $items = array();
+
+  $items['embed/%node'] = array(
+    'page callback' => 'data_engine_embed_display',
+    'page arguments' => array(1),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+
+} // data_engine_embed_menu
+
+/**
+ * Implements hook_theme().
+ */
+function data_engine_embed_theme($existing, $type, $theme, $path) {
+  return array(
+    'data_engine_embed_visualization' => array(
+      'variables' => array('title' => '', 'visualization' => '', 'url' => ''),
+      'template' => 'data_engine_embed_visualization',
+      'path' => drupal_get_path('module', 'data_engine_embed') . '/theme/'
+    )
+  );
+}
+
+/**
+ * Displays visualization for embedding.
+ */
+function data_engine_embed_display($node) {
+
+  if ($node->type != 'visualization') {
+    print '';
+    return;
+  } // if
+
+  // save the trackback
+  $referrer = '';
+  if (isset($_SERVER['HTTP_REFERER'])) {
+    $referrer = $_SERVER['HTTP_REFERER'];
+  }
+  data_engine_embed_save_visualization_trackback($node, $_SERVER['HTTP_REFERER']);
+
+  $term = taxonomy_term_load($node->field_visualization_type[$node->language][0]['tid']);
+
+  // get the node URL
+  $nodeURL = _data_engine_embed_node_url($node);
+
+  $header = TRUE;
+  
+  if (isset($_GET['no_header']) && $_GET['no_header'] == 1) {
+    $header = FALSE;
+  } // if
+
+  // get the visualization and add it to the output
+  $visualization = module_invoke('data_engine_visualize', 'create', $node);
+  $output = $visualization->render();
+  $type = $visualization->config['typeName'];
+  print theme('data_engine_embed_visualization',
+    array(
+      'header' => $header,
+      'title' => $node->title,
+      'visualization' => $output,
+      'type' => $type,
+      'url' => $nodeURL,
+      'js' => drupal_get_js(),
+      'head' => drupal_get_html_head(),
+      'footerJS' => drupal_get_js('footer')
+    )
+  );
+
+} // data_engine_embed_display
+
+/**
+ * Save visualization trackback for given visualization and referrer.
+ */
+function data_engine_embed_save_visualization_trackback($visualization, $referrer) {
+
+  $referrer = trim($referrer);
+
+  if ($visualization->type != 'visualization' || $visualization->status == 0) {
+    return FALSE;
+  } // if
+
+  if ($referrer == '') {
+    return FALSE;
+  } // if
+
+  $query = new EntityFieldQuery();
+  $result = $query->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', 'visualization_trackback')
+    ->fieldCondition('field_visualization_reference', 'target_id', $visualization->nid, '=')
+    ->fieldCondition('field_trackback_url', 'value', $referrer, '=')
+    ->execute();
+
+  if (count($result['node']) > 0) {
+    return FALSE;
+  } // if
+
+  $node = entity_create('node', array('type' => 'visualization_trackback', 'title' => 'Trackback for ' . $visualization->title));
+  $wrapper = entity_metadata_wrapper('node', $node);
+  $wrapper->field_visualization_reference->set($visualization->nid);
+  $wrapper->field_trackback_url->set($referrer);
+
+  node_save($node);
+
+  return $node;
+
+} // data_engine_embed_save_visualization_trackback
+
+/**
+ * Return the external/absolute URL for this node
+ */
+function _data_engine_embed_node_url($node) {
+  return url(drupal_lookup_path('alias', 'node/'. $node->nid), array('absolute' => TRUE));
+}

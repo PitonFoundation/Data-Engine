@@ -1,0 +1,25 @@
+//
+// @file
+// Styles for all regions within main.
+// ----------------------------------------------------------------------------
+
+// Main
+#main {
+  background-color: $white;
+  min-width: $w-full + 24px;
+  color: $primary-color;
+}
+
+// Above content
+#above-content {
+  padding-top: rhythm(2);
+}
+
+// Main content
+#main-content {
+  padding: rhythm(2) 0;
+}
+
+.region-content {
+  position: relative;
+}

@@ -1,0 +1,89 @@
+.step-list {
+  @include clearfix;
+  @include inline-block;
+  @include box-shadow(
+    $white 0 0 3px,
+    rgba($black, .2) 0 1px 5px
+  );
+  @include border-radius(4px);
+  padding: 0;
+  margin: rhythm(2) 0 rhythm(4);
+}
+
+.step-item {
+  @include rhythm-borders(1px, 1);
+  @include box-shadow( rgba($black, .2) 0 1px 4px inset );
+  @include background-image(
+    linear-gradient(
+      'bottom',
+      $gray-dark,
+      $gray-darkest
+    )
+  );
+  list-style-position: inside;
+  float: left;
+  border-color: $gray-darkest;
+  padding-right: $w-gutter-half;
+  padding-left: $w-gutter-half;
+  background-color: $gray-darker;
+  font-family: $secondary-typeface;
+  color: $gray-light;
+
+  &.first { @include border-left-radius(4px); }
+  &.last { @include border-right-radius(4px); }
+
+  &.is-complete,
+  &.is-active {
+    @include background-image(
+      linear-gradient(
+        'bottom',
+        blend-overlay(rgba($white, .2), $orange),
+        blend-overlay(rgba($black, .2), $orange)
+      )
+    );
+    border-color: $orange-dark transparent $orange-dark $orange-dark ;
+    background-color: $orange;
+    color: $white;
+
+    &.first { border-left-color: $orange-dark; }
+  }
+
+  &.is-complete {
+    color: mix($orange-light, $orange-lighter);
+  }
+}
+
+// FORM ELEMENTS
+
+.add-dataset {
+  margin: 0 0 rhythm(3) 0;
+}
+
+.form-item-add-more-datasets {
+  > label {
+    margin-right: $w-gutter-half;
+  }
+}
+
+#edit-visualizations #edit-type {
+  @include nup-container;
+}
+
+.form-type-radio.visualization-type {
+  @include nup-base;
+  @include nup-item(3);
+  text-align: center;
+}
+
+#data-engine-visualize-add-form {
+  .ajax-progress {
+    @include inline-block;
+    float: none;
+  }
+}
+
+// Preview Chart
+
+#visualization-preview {
+  margin-bottom: rhythm(4);
+}

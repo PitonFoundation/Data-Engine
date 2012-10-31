@@ -1,0 +1,44 @@
+//
+// @file
+// Heading and title styles.
+// ----------------------------------------------------------------------------
+
+// Article list
+.article-list {
+  padding: 0;
+  border-bottom: 1px solid $border-color;
+}
+
+.article-item {
+  @include leading-border(1px, 2);
+  padding-bottom: rhythm(2);
+  display: block;
+  border-color: $border-color;
+}
+
+// Feature list
+.feature-list {
+}
+
+.feature-item {
+}
+
+// No bullets
+.no-bullets {
+  margin: 0;
+  padding: 0;
+
+  > li {
+    list-style: none;
+  }
+}
+
+// Related list
+.related-list {
+  margin: 0;
+  padding-left: $w-gutter-half;
+}
+
+.related-item {
+  margin-bottom: rhythm(1, $fs-s);
+}

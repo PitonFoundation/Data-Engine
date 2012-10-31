@@ -1,0 +1,25 @@
+//
+// @file
+// Helper functions
+// ----------------------------------------------------------------------------
+
+// CALCULATE PERCENTAGES
+@function calc-percent($target, $container) {
+  @return ($target / $container) * 100%;
+}
+
+// Shortcut
+@function cp($target, $container) {
+  @return calc-percent($target, $container);
+}
+
+
+// CALCULATE EMS
+@function calc-ems($target, $context: $base-font-size) {
+  @return ($target / $context) * 1em;
+}
+
+// Shortcut
+@function ce($target, $context: $base-font-size) {
+  @return calc-ems($target, $context);
+}

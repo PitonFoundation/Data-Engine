@@ -1,0 +1,56 @@
+//
+// @file
+// Reusable mixins
+//
+// ----------------------------------------------------------------------------
+
+
+// N-UP
+// Mixins for creating simple equal width grids of elements.
+// @todo: Check browser compatibility.
+// @todo: Move this to its own file.
+
+@mixin nup-container {
+  font-size: 0; // Removes horizontal space between inline-block elements.
+}
+
+@mixin nup-base($gutter: $w-gutter-half) {
+  @include box-sizing(border-box);
+  @include inline-block(top); // Allows for vertical alignment of contents.
+  padding: 0 $gutter;
+  font-size: $base-font-size; // Resets the font-size from the container.
+}
+
+@mixin nup-item($columns: 2) {
+  width: 100% / $columns;
+}
+
+
+// RULED TEXT
+@mixin text-ruled($spread: 6em, $rule-color: $gray, $y-value: .66em, $thickness: 1px) {
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+
+  &:after,
+  &:before {
+    content: "";
+    position: absolute;
+    top: $y-value;
+    display: block;
+    height: $thickness;
+    width: 100%;
+    background-color: $rule-color;
+  }
+
+  &:before {
+    left: 50%;
+    margin-left: $spread;
+  }
+
+  &:after {
+    right: 50%;
+    margin-right: $spread;
+  }
+}
+

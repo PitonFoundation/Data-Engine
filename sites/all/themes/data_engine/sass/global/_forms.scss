@@ -1,0 +1,311 @@
+//
+// @file
+// Global form styles.
+//
+// ----------------------------------------------------------------------------
+
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  @include box-shadow(0 0 5px $gray);
+}
+
+.form-item {
+  margin: 0 0 rhythm(3) 0;
+}
+
+//  Labels
+// ---------------------
+
+label,
+fieldset-legend {
+  @include adjust-font-size-to($fs-s);
+  margin-bottom: rhythm(1, 12px);
+  font-family: $secondary-typeface;
+}
+
+.form-required {
+  color: $red;
+  font-weight: bold;
+}
+
+//  Form Fields
+// ---------------------
+
+textarea,
+select,
+input[type="date"],
+input[type="datetime"],
+input[type="datetime-local"],
+input[type="email"],
+input[type="month"],
+input[type="number"],
+input[type="password"],
+input[type="search"],
+input[type="tel"],
+input[type="text"],
+input[type="time"],
+input[type="url"],
+input[type="week"] {
+  @include border-radius(3px);
+  @include box-sizing(border-box);
+  padding: 0 2px 0 4px;
+  margin-bottom: rhythm(1);
+  max-width: 100%;
+  background-color: $white;
+  border: 1px $gray solid;
+  color: $gray-darker;
+  &:focus {
+    border-color: $gray;
+  }
+}
+
+input[type="submit"] {
+  @extend .button-primary;
+}
+
+.form-submit {
+  margin-right: $w-gutter-half;
+}
+
+// FIELDSETS
+
+fieldset {
+  margin-bottom: rhythm(4);
+}
+
+.fieldset-description {
+  @include adjust-font-size-to($fs-s);
+  margin: rhythm(1, $fs-s) 0 rhythm(2, $fs-s);
+  color: $gray;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+html.js fieldset.collapsible .fieldset-legend {
+  padding-left: 18px;
+  background-image: url('../images/expanded.png');
+  background-position: 3px 50%;
+}
+
+.fieldset-wrapper {
+  padding: rhythm(3) $w-gutter-half rhythm(3) $w-gutter-half + 5px;
+}
+
+html.js fieldset.collapsed .fieldset-legend {
+  background-image: url('../images/collapsed.png');
+  background-position: 4px 50%;
+}
+
+.fieldset-title,
+.fieldset-legend {
+  @include adjust-font-size-to($fs-l);
+  font-family: $secondary-typeface;
+}
+
+.fieldset-legend {
+  padding: 0 12px 0 4px;
+}
+
+// Views exposed filters
+// ---------------------
+
+.views-exposed-form {
+  background-color: $blue-white;
+  padding: rhythm(1) $w-gutter-half 0;
+
+  .views-widget,
+  label {
+    @include inline-block;
+    margin-right: $w-gutter-half;
+  }
+
+  select {
+    position: relative;
+    top: 2px;
+  }
+}
+
+.views-exposed-widget {
+  @include inline-block;
+  margin-right: $w-gutter;
+  float: left;
+}
+
+.views-submit-button > .form-submit {
+  @extend .button-primary;
+}
+
+.views-submit-button {
+  clear: none;
+}
+
+.views-submit-button,
+.views-reset-button {
+  position: relative;
+  top: 0;
+  margin-right: $w-gutter-half;
+}
+
+%form-layout-inline {
+  .form-item,
+  .form-actions {
+    @include clearfix;
+    padding-left: 228px + $w-gutter;
+    margin-bottom: rhythm(3);
+
+    .form-item { padding-left: 0; }
+  }
+
+  .form-item  > label {
+    float: left;
+    width: 228px;
+    margin-left: -1 * (228px + $w-gutter);
+    text-align: right;
+  }
+
+  .form-radios > .form-item {
+    @include inline-block;
+    padding-left: 0;
+    margin-top: 0;
+
+    > label {
+      display: inline !important;
+      float: none;
+      margin: 0 $w-gutter 0 0;
+      width: auto;
+    }
+
+    > .form-radio {
+      display: inline;
+      margin: 0 2px;
+    }
+  }
+}
+
+#user-register-form,
+#user-login,
+#user-pass,
+#contact-site-form {
+  @extend %form-layout-inline;
+}
+
+// Fix width inconsistencies in Chrome.
+#edit-current-pass,
+input.password-field,
+input.password-confirm {
+  width: 12em;
+}
+
+// Push page titles over to match forms
+.page-user-login,
+.page-user-register,
+.page-user-password,
+.page-contact {
+  .page-title {
+    padding-left: 228px + $w-gutter;
+  }
+}
+
+// Password strength
+.form-type-password {
+  position: relative;
+}
+
+.password-strength,
+div.password-confirm {
+  @include adjust-font-size-to($fs-xs);
+  position: absolute;
+  left: 16em;
+  top: 0;
+  font-family: $sans-typeface;
+  white-space: nowrap;
+}
+
+div.password-confirm {
+  top: rhythm(.5, $fs-xs);
+}
+
+.password-strength-title,
+.password-strength-text,
+div.password-confirm {
+  margin-right: $w-gutter-half;
+  font-weight: bold;
+}
+
+.password-strength-title,
+.password-strength-text {
+  display: inline;
+}
+
+.password-strength-title,
+div.password-confirm {
+  color: $gray;
+}
+
+.password-parent {
+  position: relative;
+}
+
+.password-strength-text {
+  position: absolute;
+  top: .1;
+  left: 9.5em;
+  color: $gray-darkest;
+}
+
+.password-indicator {
+  height: rhythm(1);
+  width: 12.5em;
+  margin-bottom: rhythm(1);
+  background-color: $gray-lightest;
+
+  > .indicator {
+    height: 100%;
+    width: 0;
+    background-color: $gray-dark;
+  }
+}
+
+div.password-confirm {
+  > .error,
+  > .ok {
+    @include box-sizing(inline-block);
+    @include border-radius(.33em);
+    text-transform: uppercase;
+    padding-right: .5em;
+    padding-left: .5em;
+    color: $white;
+  }
+
+  > .error { background-color: $red; }
+  > .ok { background-color: $green; }
+}
+
+.form-type-password {
+  overflow: visible !important;
+}
+
+form .description {
+  @include adjust-font-size-to($fs-xs);
+  margin-top: rhythm(1, $fs-xs);
+  color: $gray;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.description--above {
+  margin-bottom: rhythm(1, $fs-xs);
+}
+
+.field-widget-text-textarea,
+.field-widget-text-textarea-with-summary {
+  margin-bottom: rhythm(4);
+}
+
+.no-term-reference-tree-button {
+  background-color: transparent;
+}
+
+.ajax-progress {
+  white-space: nowrap;
+}

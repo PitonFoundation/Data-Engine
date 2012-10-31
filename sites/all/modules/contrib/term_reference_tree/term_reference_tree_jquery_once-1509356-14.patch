@@ -1,0 +1,22 @@
+diff --git a/term_reference_tree.js b/term_reference_tree.js
+index aa6605f..0fcf82e 100644
+--- a/term_reference_tree.js
++++ b/term_reference_tree.js
+@@ -2,7 +2,7 @@
+   Drupal.behaviors.termReferenceTree = {
+     attach: function(context, settings) {
+       // Bind the term expand/contract button to slide toggle the list underneath.
+-      $('.term-reference-tree-button', context).click(function() {
++      $('.term-reference-tree-button', context).once('term-reference-tree-button').click(function() {
+         $(this).toggleClass('term-reference-tree-collapsed');
+         $(this).siblings('ul').slideToggle('fast');
+       });
+@@ -15,7 +15,7 @@
+       */
+ 
+ 
+-      $('.term-reference-tree', context).each(function() {
++      $('.term-reference-tree', context).once('term-reference-tree', function() {
+         // On page load, check whether the maximum number of choices is already selected.
+         // If so, disable the other options.
+         var tree = $(this);

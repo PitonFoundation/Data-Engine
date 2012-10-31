@@ -1,0 +1,4 @@
+name =  Browse
+package = Data Engine
+description = Customizations for the Find & Visualize tabs
+core = 7.x

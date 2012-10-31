@@ -1,0 +1,3 @@
+name =  Own Unpublished
+description = Creates permissions to view, edit, and delete own content
+core = 7.x

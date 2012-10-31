@@ -1,0 +1,4 @@
+name =  Datasets
+description = Customizations for datasets
+package = Data Engine
+core = 7.x

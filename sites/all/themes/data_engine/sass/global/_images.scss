@@ -1,0 +1,28 @@
+//
+// @file
+// Image styles.
+// ----------------------------------------------------------------------------
+
+// Borders
+// -------
+
+.image-frame > img,
+.image-frame > a > img {
+  @include box-sizing(border-box);
+  @include box-shadow(rgba($gray-dark, .6) 0 1px 3px);
+  padding: 4px;
+  background-color: $white;
+}
+
+// Floating
+// --------
+
+.image-left {
+  float: left;
+  margin: 0 $w-gutter rhythm(1) 0;
+}
+
+.image-right {
+  float: right;
+  margin: 0 0 rhythm(1) $w-gutter;
+}

@@ -1,0 +1,12 @@
+name = "Semantic Display Suite"
+description = Semantic field options for Display Suite
+core = 7.x
+package = "Display suite"
+dependencies[] = ds
+
+; Information added by drupal.org packaging script on 2012-09-20
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "semantic_ds"
+datestamp = "1348103740"
+

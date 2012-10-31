@@ -1,0 +1,763 @@
+<?php
+/**
+ * @file
+ * Semantic DS adds semantic field templates and layouts to Display Suite.
+ */
+
+/**
+ * Implements hook_ds_field_theme_functions_info().
+ */
+function semantic_ds_ds_field_theme_functions_info() {
+  return array(
+    'theme_semantic_ds_field_h1' => t('h1'),
+    'theme_semantic_ds_field_h2' => t('h2'),
+    'theme_semantic_ds_field_h3' => t('h3'),
+    'theme_semantic_ds_field_h4' => t('h4'),
+    'theme_semantic_ds_field_h5' => t('h5'),
+    'theme_semantic_ds_field_h6' => t('h6'),
+    'theme_semantic_ds_field_dl' => t('dl'),
+    'theme_semantic_ds_field_ol' => t('ol'),
+    'theme_semantic_ds_field_ul' => t('ul'),
+    'theme_semantic_ds_field_figure' => t('figure'),
+    'theme_semantic_ds_field_address' => t('address'),
+    'theme_semantic_ds_field_article' => t('article'),
+    'theme_semantic_ds_field_aside' => t('aside'),
+    'theme_semantic_ds_field_header' => t('header'),
+    'theme_semantic_ds_field_footer' => t('footer'),
+    'theme_semantic_ds_field_nav' => t('nav'),
+    'theme_semantic_ds_field_section' => t('section'),
+    'theme_semantic_ds_field_span' => t('span'),
+  );
+}
+
+/**
+ * Implements hook_help().
+ */
+function semantic_ds_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#semantic_ds':
+      $output = '<h3>';
+      $output .= t('About') . '</h3>';
+      $output .= '<p>' . t("Semantic DS is an add on for Display Suite that adds semantic layouts and field templates.") . '<p>';
+      $output .= '<h3>' . t('Uses') . '</h3>';
+      $output .= '<dl>';
+      $output .= '<dt>' . t("Semantic Layouts") . '<dt>';
+      $output .= '<dd>' . t("Semantic DS includes layouts that allow for fields to be placed in semantic regions. These do not make any CSS assumptions and are meant to be styled in the theme layer.") . '<dd>';
+      $output .= '<dt>' . t("Semantic Field Wrappers") . '<dt>';
+      $output .= '<dd>' . t("Semantic DS includes custom field wrappers based on semantic HTML5 elements, similar to what the Fences module provides. This allows site builders to choose the best fit for the field given the current view mode.") . '<dd>';
+      $output .= '</dl>';
+      return $output;
+  }
+}
+
+/**
+ * Custom implementation of theme_field().
+ */
+function theme_semantic_ds_field_h1($variables) {
+  $output = '';
+  $config = $variables['ds-config'];
+
+  // Render the label.
+  if (!$variables['label_hidden']) {
+    if ($variables['element']['#label_display'] == 'above') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span>';
+    }
+    elseif ($variables['element']['#label_display'] == 'inline') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span>';
+    }
+    if (!isset($config['lb-col'])) {
+      $output .= ':&nbsp;';
+    }
+  }
+
+  foreach ($variables['items'] as $delta => $item) {
+    $output .= '<span ' . $variables['item_attributes'][$delta] . '>'
+      . drupal_render($item) . '</span>';
+  }
+
+  // Render the wrapping h1.
+  $output = '<h1 class="' . $variables['classes'] . '"'
+    . $variables['attributes'] . '>' . $output . '</h1>';
+
+  return $output;
+}
+
+/**
+ * Custom implementation of theme_field().
+ */
+function theme_semantic_ds_field_h2($variables) {
+  $output = '';
+  $config = $variables['ds-config'];
+
+  // Render the label.
+  if (!$variables['label_hidden']) {
+    if ($variables['element']['#label_display'] == 'above') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span><br/>';
+    }
+    elseif ($variables['element']['#label_display'] == 'inline') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span>';
+    }
+    if (!isset($config['lb-col'])) {
+      $output .= ':&nbsp;';
+    }
+  }
+
+  foreach ($variables['items'] as $delta => $item) {
+    $output .= '<span ' . $variables['item_attributes'][$delta] . '>'
+      . drupal_render($item) . '</span>';
+  }
+
+  // Render the wrapping h6.
+  $output = '<h2 class="' . $variables['classes'] . '"'
+    . $variables['attributes'] . '>' . $output . '</h2>';
+
+  return $output;
+}
+
+/**
+ * Custom implementation of theme_field().
+ */
+function theme_semantic_ds_field_h3($variables) {
+  $output = '';
+  $config = $variables['ds-config'];
+
+  // Render the label.
+  if (!$variables['label_hidden']) {
+    if ($variables['element']['#label_display'] == 'above') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span><br/>';
+    }
+    elseif ($variables['element']['#label_display'] == 'inline') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span>';
+    }
+    if (!isset($config['lb-col'])) {
+      $output .= ':&nbsp;';
+    }
+  }
+
+  foreach ($variables['items'] as $delta => $item) {
+    $output .= '<span ' . $variables['item_attributes'][$delta] . '>'
+      . drupal_render($item) . '</span>';
+  }
+
+  // Render the wrapping h6.
+  $output = '<h3 class="' . $variables['classes'] . '"'
+    . $variables['attributes'] . '>' . $output . '</h3>';
+
+  return $output;
+}
+
+/**
+ * Custom implementation of theme_field().
+ */
+function theme_semantic_ds_field_h4($variables) {
+  $output = '';
+  $config = $variables['ds-config'];
+
+  // Render the label.
+  if (!$variables['label_hidden']) {
+    if ($variables['element']['#label_display'] == 'above') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span><br/>';
+    }
+    elseif ($variables['element']['#label_display'] == 'inline') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span>';
+    }
+    if (!isset($config['lb-col'])) {
+      $output .= ':&nbsp;';
+    }
+  }
+
+  foreach ($variables['items'] as $delta => $item) {
+    $output .= '<span ' . $variables['item_attributes'][$delta] . '>'
+      . drupal_render($item) . '</span>';
+  }
+
+  // Render the wrapping h4.
+  $output = '<h4 class="' . $variables['classes'] . '"'
+    . $variables['attributes'] . '>' . $output . '</h4>';
+
+  return $output;
+}
+
+/**
+ * Custom implementation of theme_field().
+ */
+function theme_semantic_ds_field_h5($variables) {
+  $output = '';
+  $config = $variables['ds-config'];
+
+  // Render the label.
+  if (!$variables['label_hidden']) {
+    if ($variables['element']['#label_display'] == 'above') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span><br/>';
+    }
+    elseif ($variables['element']['#label_display'] == 'inline') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span>';
+    }
+    if (!isset($config['lb-col'])) {
+      $output .= ':&nbsp;';
+    }
+  }
+
+  foreach ($variables['items'] as $delta => $item) {
+    $output .= '<span ' . $variables['item_attributes'][$delta] . '>'
+      . drupal_render($item) . '</span>';
+  }
+
+  // Render the wrapping h5.
+  $output = '<h5 class="' . $variables['classes'] . '"'
+    . $variables['attributes'] . '>' . $output . '</h5>';
+
+
+  return $output;
+}
+
+/**
+ * Custom implementation of theme_field().
+ */
+function theme_semantic_ds_field_h6($variables) {
+  $output = '';
+  $config = $variables['ds-config'];
+
+  // Render the label.
+  if (!$variables['label_hidden']) {
+    if ($variables['element']['#label_display'] == 'above') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span><br/>';
+    }
+    elseif ($variables['element']['#label_display'] == 'inline') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+      . $variables['label'] . '</span>';
+    }
+    if (!isset($config['lb-col'])) {
+      $output .= ':&nbsp;';
+    }
+  }
+
+  foreach ($variables['items'] as $delta => $item) {
+    $output .= '<span ' . $variables['item_attributes'][$delta] . '>'
+      . drupal_render($item) . '</span>';
+  }
+
+  // Render the wrapping h6.
+  $output = '<h6 class="' . $variables['classes'] . '"'
+    . $variables['attributes'] . '>' . $output . '</h6>';
+
+  return $output;
+}
+
+/**
+ * Custom implementation of theme_field().
+ */
+function theme_semantic_ds_field_dl($variables) {
+  $output = '';
+  $config = $variables['ds-config'];
+
+  // Render the label.
+  if (!$variables['label_hidden']) {
+    $label = $variables['label'];
+    if (!isset($config['lb-col'])) {
+      $label .= ':&nbsp;';
+    }
+
+    if ($variables['element']['#label_display'] == 'above') {
+      $output .= '<dt ' . $variables['title_attributes'] . '>'
+        . $label . '</dt>';
+    }
+    elseif ($variables['element']['#label_display'] == 'inline') {
+      $output .= '<span ' . $variables['title_attributes'] . '>' . $label
+        . '</span>';
+    }
+  }
+
+  // Render the items.
+  $output .= '<dd ' . $variables['content_attributes'] . '>';
+  foreach ($variables['items'] as $delta => $item) {
+    $output .= '<span ' . $variables['item_attributes'][$delta] . '>'
+      . drupal_render($item) . '</span>';
+  }
+  $output .= '</dd>';
+
+  // Render the wrapping DL.
+  $output = '<dl class="' . $variables['classes'] . '"'
+    . $variables['attributes'] . '>' . $output . '</dl>';
+
+  return $output;
+}
+
+/**
+ * Custom implementation of theme_field().
+ */
+function theme_semantic_ds_field_ol($variables) {
+  $output = '';
+  $config = $variables['ds-config'];
+
+  // Render the label.
+  if (!$variables['label_hidden']) {
+    if ($variables['element']['#label_display'] == 'above') {
+      $output .= '<h3 ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</h3>';
+    }
+    elseif ($variables['element']['#label_display'] == 'inline') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span>';
+    }
+    if (!isset($config['lb-col'])) {
+      $output .= ':&nbsp;';
+    }
+  }
+
+  // Render the items.
+  $output .= '<ol ' . $variables['content_attributes'] . '>';
+  foreach ($variables['items'] as $delta => $item) {
+    $output .= '<li ' . $variables['item_attributes'][$delta] . '>'
+      . drupal_render($item) . '</li>';
+  }
+  $output .= '</ol>';
+
+  return $output;
+}
+
+/**
+ * Custom implementation of theme_field().
+ */
+function theme_semantic_ds_field_ul($variables) {
+  $output = '';
+  $config = $variables['ds-config'];
+
+  // Render the label.
+  if (!$variables['label_hidden']) {
+    if ($variables['element']['#label_display'] == 'above') {
+      $output .= '<h3 ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</h3>';
+    }
+    elseif ($variables['element']['#label_display'] == 'inline') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span>';
+    }
+    if (!isset($config['lb-col'])) {
+      $output .= ':&nbsp;';
+    }
+  }
+
+  // Render the items.
+  $output .= '<ul ' . $variables['content_attributes'] . '>';
+  foreach ($variables['items'] as $delta => $item) {
+    $output .= '<li ' . $variables['item_attributes'][$delta] . '>'
+      . drupal_render($item) . '</li>';
+  }
+  $output .= '</ul>';
+
+  return $output;
+}
+
+/**
+ * Custom implementation of theme_field().
+ */
+function theme_semantic_ds_field_li($variables) {
+  $output = '';
+  $config = $variables['ds-config'];
+
+  // Render the label.
+  if (!$variables['label_hidden']) {
+    if ($variables['element']['#label_display'] == 'above') {
+      $output .= '<h3 ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</h3>';
+    }
+    elseif ($variables['element']['#label_display'] == 'inline') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span>';
+    }
+    if (!isset($config['lb-col'])) {
+      $output .= ':&nbsp;';
+    }
+  }
+
+  // Render the items.
+  foreach ($variables['items'] as $delta => $item) {
+    $output .= '<span ' . $variables['item_attributes'][$delta] . '>'
+      . drupal_render($item) . '</span>';
+  }
+
+  // Render the top-level wrapper element.
+  $output = '<li class="' . $variables['classes'] . '"'
+    . $variables['attributes'] . '>' . $output . '</li>';
+
+  return $output;
+}
+
+/**
+ * Custom implementation of theme_field().
+ */
+function theme_semantic_ds_field_figure($variables) {
+  $output = '';
+  $config = $variables['ds-config'];
+
+  // Render the label.
+  if (!$variables['label_hidden']) {
+    if ($variables['element']['#label_display'] == 'above') {
+      $output .= '<figcaption ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</figcaption>';
+    }
+    elseif ($variables['element']['#label_display'] == 'inline') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span>';
+    }
+    if (!isset($config['lb-col'])) {
+      $output .= ':&nbsp;';
+    }
+  }
+
+  // Render the items.
+  foreach ($variables['items'] as $delta => $item) {
+    $output .= '<div ' . $variables['item_attributes'][$delta] . '>'
+      . drupal_render($item) . '</div>';
+  }
+
+  // Render the top-level wrapper element.
+  $output = '<figure class="' . $variables['classes'] . '"'
+    . $variables['attributes'] . '>' . $output . '</figure>';
+
+  return $output;
+}
+
+/**
+ * Custom implementation of theme_field().
+ */
+function theme_semantic_ds_field_aside($variables) {
+  $output = '';
+  $config = $variables['ds-config'];
+
+  // Render the label.
+  if (!$variables['label_hidden']) {
+    if ($variables['element']['#label_display'] == 'above') {
+      $output .= '<h3 ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</h3>';
+    }
+    elseif ($variables['element']['#label_display'] == 'inline') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span>';
+    }
+    if (!isset($config['lb-col'])) {
+      $output .= ':&nbsp;';
+    }
+  }
+
+  // Render the items.
+  foreach ($variables['items'] as $delta => $item) {
+    $output .= '<span ' . $variables['item_attributes'][$delta] . '>'
+      . drupal_render($item) . '</span>';
+  }
+
+  // Render the top-level wrapper element.
+  $output = '<aside class="' . $variables['classes'] . '"'
+    . $variables['attributes'] . '>' . $output . '</aside>';
+
+  return $output;
+}
+
+/**
+ * Custom implementation of theme_field().
+ */
+function theme_semantic_ds_field_header($variables) {
+  $output = '';
+  $config = $variables['ds-config'];
+
+  // Render the label.
+  if (!$variables['label_hidden']) {
+    if ($variables['element']['#label_display'] == 'above') {
+      $output .= '<h3 ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</h3>';
+    }
+    elseif ($variables['element']['#label_display'] == 'inline') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span>';
+    }
+    if (!isset($config['lb-col'])) {
+      $output .= ':&nbsp;';
+    }
+  }
+
+  // Render the items.
+  foreach ($variables['items'] as $delta => $item) {
+    $output .= '<span ' . $variables['item_attributes'][$delta] . '>'
+      . drupal_render($item) . '</span>';
+  }
+
+  // Render the top-level wrapper element.
+  $output = '<header class="' . $variables['classes'] . '"'
+    . $variables['attributes'] . '>' . $output . '</header>';
+
+  return $output;
+}
+
+/**
+ * Custom implementation of theme_field().
+ */
+function theme_semantic_ds_field_footer($variables) {
+  $output = '';
+  $config = $variables['ds-config'];
+
+  // Render the label.
+  if (!$variables['label_hidden']) {
+    if ($variables['element']['#label_display'] == 'above') {
+      $output .= '<h3 ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</h3>';
+    }
+    elseif ($variables['element']['#label_display'] == 'inline') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span>';
+    }
+    if (!isset($config['lb-col'])) {
+      $output .= ':&nbsp;';
+    }
+  }
+
+  // Render the items.
+  foreach ($variables['items'] as $delta => $item) {
+    $output .= '<span ' . $variables['item_attributes'][$delta] . '>'
+      . drupal_render($item) . '</span>';
+  }
+
+  // Render the top-level wrapper element.
+  $output = '<footer class="' . $variables['classes'] . '"'
+    . $variables['attributes'] . '>' . $output . '</footer>';
+
+  return $output;
+}
+
+/**
+ * Custom implementation of theme_field().
+ */
+function theme_semantic_ds_field_nav($variables) {
+  $output = '';
+  $config = $variables['ds-config'];
+
+  // Render the label.
+  if (!$variables['label_hidden']) {
+    if ($variables['element']['#label_display'] == 'above') {
+      $output .= '<h3 ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</h3>';
+    }
+    elseif ($variables['element']['#label_display'] == 'inline') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span>';
+    }
+    if (!isset($config['lb-col'])) {
+      $output .= ':&nbsp;';
+    }
+  }
+
+  // Render the items.
+  $output .= '<nav ' . $variables['content_attributes'] . '>';
+
+  foreach ($variables['items'] as $delta => $item) {
+    $output .= '<span ' . $variables['item_attributes'][$delta] . '>'
+      . drupal_render($item) . '</span>';
+  }
+  $output .= '</nav>';
+
+  return $output;
+}
+
+/**
+ * Custom implementation of theme_field().
+ */
+function theme_semantic_ds_field_section($variables) {
+  $output = '';
+  $config = $variables['ds-config'];
+
+  // Render the label.
+  if (!$variables['label_hidden']) {
+    if ($variables['element']['#label_display'] == 'above') {
+      $output .= '<h3 ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</h3>';
+    }
+    elseif ($variables['element']['#label_display'] == 'inline') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span>';
+    }
+    if (!isset($config['lb-col'])) {
+      $output .= ':&nbsp;';
+    }
+  }
+
+  // Render the items.
+  foreach ($variables['items'] as $delta => $item) {
+    $output .= '<span ' . $variables['item_attributes'][$delta] . '>'
+      . drupal_render($item) . '</span>';
+  }
+
+  // Render the top-level wrapper element.
+  $output = '<section class="' . $variables['classes'] . '"'
+    . $variables['attributes'] . '>' . $output . '</section>';
+
+  return $output;
+}
+
+/**
+ * Custom implementation of theme_field().
+ */
+function theme_semantic_ds_field_span($variables) {
+  $output = '';
+  $config = $variables['ds-config'];
+
+  // Render the label.
+  if (!$variables['label_hidden']) {
+    if ($variables['element']['#label_display'] == 'above') {
+      $output .= '<h3 ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</h3>';
+    }
+    elseif ($variables['element']['#label_display'] == 'inline') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span>';
+    }
+    if (!isset($config['lb-col'])) {
+      $output .= ':&nbsp;';
+    }
+  }
+
+  // Render the items.
+  foreach ($variables['items'] as $delta => $item) {
+    $output .= '<span ' . $variables['item_attributes'][$delta] . '>'
+      . drupal_render($item) . '</span>';
+  }
+
+  // Render the top-level wrapper element.
+  $output = '<span class="' . $variables['classes'] . '"'
+    . $variables['attributes'] . '>' . $output . '</span>';
+
+  return $output;
+}
+
+/**
+ * Custom implementation of theme_field().
+ */
+function theme_semantic_ds_field_address($variables) {
+  $output = '';
+  $config = $variables['ds-config'];
+
+  // Render the label.
+  if (!$variables['label_hidden']) {
+    if ($variables['element']['#label_display'] == 'above') {
+      $output .= '<h3 ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</h3>';
+    }
+    elseif ($variables['element']['#label_display'] == 'inline') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span>';
+    }
+    if (!isset($config['lb-col'])) {
+      $output .= ':&nbsp;';
+    }
+  }
+
+  // Render the items.
+  foreach ($variables['items'] as $delta => $item) {
+    $output .= '<span ' . $variables['item_attributes'][$delta] . '>'
+      . drupal_render($item) . '</span>';
+  }
+
+  // Render the top-level wrapper element.
+  $output = '<address class="' . $variables['classes'] . '"'
+    . $variables['attributes'] . '>' . $output . '</address>';
+
+  return $output;
+}
+
+/**
+ * Custom implementation of theme_field().
+ */
+function theme_semantic_ds_field_article($variables) {
+  $output = '';
+  $config = $variables['ds-config'];
+
+  // Render the label.
+  if (!$variables['label_hidden']) {
+    if ($variables['element']['#label_display'] == 'above') {
+      $output .= '<h3 ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</h3>';
+    }
+    elseif ($variables['element']['#label_display'] == 'inline') {
+      $output .= '<span ' . $variables['title_attributes'] . '>'
+        . $variables['label'] . '</span>';
+    }
+    if (!isset($config['lb-col'])) {
+      $output .= ':&nbsp;';
+    }
+  }
+
+  // Render the items.
+  foreach ($variables['items'] as $delta => $item) {
+    $output .= '<span ' . $variables['item_attributes'][$delta] . '>'
+      . drupal_render($item) . '</span>';
+  }
+
+  // Render the top-level wrapper element.
+  $output = '<article class="' . $variables['classes'] . '"'
+    . $variables['attributes'] . '>' . $output . '</article>';
+
+  return $output;
+}
+
+/**
+ * Define custom Display Suite layouts.
+ *
+ * @return array
+ *   A list of layouts.
+ */
+function semantic_ds_ds_layout_info() {
+  $path = drupal_get_path('module', 'semantic_ds');
+  $layouts = array(
+    'article' => array(
+      'label' => t('Article'),
+      'path' => $path . '/layouts/article',
+      'regions' => array(
+        'header' => t('Header'),
+        'hgroup' => t('Header Group'),
+        'main_content' => t('Content'),
+        'figure' => t('Figure'),
+        'aside' => t('Aside'),
+        'footer' => t('Footer'),
+      ),
+    ),
+    'figure' => array(
+      'label' => t('Figure'),
+      'path' => $path . '/layouts/figure',
+      'regions' => array(
+        'figure' => t('Figure'),
+        'figcaption' => t('Caption'),
+      ),
+    ),
+    'no_markup' => array(
+      'label' => t('No Markup'),
+      'path' => $path . '/layouts/no_markup',
+      'regions' => array(
+        'main_content' => t('Content'),
+      ),
+    ),
+    'section' => array(
+      'label' => t('Section'),
+      'path' => $path . '/layouts/section',
+      'regions' => array(
+        'hgroup' => t('Header Group'),
+        'header' => t('Header'),
+        'main_content' => t('Content'),
+        'figure' => t('Figure'),
+        'aside' => t('Aside'),
+        'footer' => t('Footer'),
+      ),
+    ),
+  );
+
+  return $layouts;
+}

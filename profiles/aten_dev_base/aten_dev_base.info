@@ -1,0 +1,63 @@
+name = Aten Dev Base
+description = Install all the modules Aten Design Group commonly uses.
+core = 7.x
+
+; Core
+dependencies[] = block
+dependencies[] = comment
+dependencies[] = contextual
+dependencies[] = dashboard
+dependencies[] = dblog
+dependencies[] = help
+dependencies[] = image
+dependencies[] = list
+dependencies[] = menu
+dependencies[] = number
+dependencies[] = options
+dependencies[] = path
+dependencies[] = taxonomy
+dependencies[] = syslog
+dependencies[] = search
+dependencies[] = shortcut
+dependencies[] = toolbar
+dependencies[] = field
+dependencies[] = field_ui
+dependencies[] = file
+dependencies[] = rdf
+
+; Contrib
+dependencies[] = context
+dependencies[] = context_ui
+dependencies[] = ctools
+dependencies[] = date
+dependencies[] = date_popup
+dependencies[] = date_repeat
+dependencies[] = devel
+dependencies[] = ds
+dependencies[] = ds_extras
+dependencies[] = entity
+dependencies[] = field_group
+dependencies[] = googleanalytics
+dependencies[] = image_url_formatter
+dependencies[] = libraries
+dependencies[] = link
+dependencies[] = logintoboggan
+dependencies[] = menu_block
+dependencies[] = module_filter
+dependencies[] = nodequeue
+dependencies[] = pathauto
+dependencies[] = references
+dependencies[] = node_reference
+dependencies[] = references_dialog
+dependencies[] = respondjs
+dependencies[] = shield
+dependencies[] = token
+dependencies[] = transliteration
+dependencies[] = views
+dependencies[] = views_ui
+dependencies[] = views_bulk_operations
+dependencies[] = webform
+dependencies[] = wysiwyg
+
+; Files
+files[] = aten_dev_base.profile

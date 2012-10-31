@@ -1,0 +1,14 @@
+//
+// @file
+// Contact page styles.
+// ----------------------------------------------------------------------------
+
+.contact-info {
+  p {
+    @include adjust-font-size-to($fs-s);
+  }
+
+  h5 {
+    margin-bottom: 0;
+  }
+}

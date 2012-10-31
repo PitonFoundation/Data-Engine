@@ -1,0 +1,5 @@
+name = Data Engine API
+description = Provides callbacks for Services module.
+core = 7.x
+package = Data Engine
+dependencies[] = services

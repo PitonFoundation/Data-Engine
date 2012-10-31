@@ -1,0 +1,7 @@
+name = "Data Engine Tokens"
+package = Data Engine
+description = "Custom tokens for Data Engine"
+core = 7.x
+
+dependencies[] = node
+dependencies[] = token

@@ -1,0 +1,4 @@
+name =  Admin
+package = Data Engine
+description = Admin customizations
+core = 7.x

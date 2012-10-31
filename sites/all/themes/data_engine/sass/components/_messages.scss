@@ -1,0 +1,68 @@
+//
+// @file
+// Drupal Message styles.
+// ----------------------------------------------------------------------------
+
+// Messages region
+#messages {
+  @include clearfix;
+  padding: rhythm(4) $w-gutter-half rhythm(1);
+}
+
+// Individual messages
+.messages {
+	@include border-radius(4px);
+	margin-bottom: rhythm(1);
+	padding: rhythm(1) $w-gutter-half;
+  color: $white;
+
+  a {
+    color: $white;
+    text-decoration: underline;
+  }
+
+  &.error    {
+    background-color: $red;
+
+    a {
+      color: $orange-light;
+
+      &:hover {
+        color: $white;
+      }
+    }
+  }
+
+  &.warning  {
+    background-color: $orange;
+
+    a {
+      color: $orange-lightest;
+
+      &:hover {
+        color: $white;
+      }
+    }
+  }
+
+  &.status   {
+    background-color: $green;
+
+    a {
+      color: $green-lightest;
+
+      &:hover {
+        color: $white;
+      }
+    }
+  }
+}
+
+// Account for dpm()
+.krumo-root {
+  color: $gray-darker;
+
+  .krumo-node a {
+    @include link-colors($gray-darker, $black);
+  }
+}

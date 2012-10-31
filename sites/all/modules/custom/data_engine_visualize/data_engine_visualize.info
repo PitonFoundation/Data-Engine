@@ -1,0 +1,4 @@
+name = Visualize and visualization creation
+description = Customize the visualization functionality
+package = Data Engine
+core = 7.x

@@ -1,0 +1,105 @@
+//
+// @file
+// User info block styles.
+// ----------------------------------------------------------------------------
+
+.view-mode-account_sidebar {
+  .ds-hgroup {
+    @include trailing-border(1px, .5);
+    border-color: $gray-light;
+    margin-bottom: rhythm(4);
+  }
+
+  .field-name-field-full-name {
+    @include adjust-font-size-to($fs-xl);
+    margin-bottom: 0;
+  }
+
+  .field-name-field-role-position {
+    @include adjust-font-size-to($fs-m);
+    margin: 0;
+    color: $gray-darker;
+  }
+
+  .field-name-field-website,
+  .field-name-user-email-address {
+    @extend %meta;
+    margin-bottom: rhythm(2, $fs-xs);
+  }
+
+  // Organization
+  .field-name-field-organization-name {
+    margin-top: rhythm(6, $h4-font-size);
+  }
+}
+
+// Edit profile button.
+.link-edit-profile {
+  @extend %button-secondary;
+  @include inline-block;
+  margin-top: rhythm(6, $fs-l);
+
+  &:before {
+    font-size: .75em;
+    margin-right: .5em;
+    position: relative;
+    top: .0875em;
+    left: -.25em;
+  }
+}
+
+// EDIT PROFILE
+
+// Account specific forms fields
+#user-profile-form {
+  .form-wrapper {
+    @include zen-grid-flow-item(4, 8);
+    float: left;
+
+    .form-wrapper {
+      width: 100%;
+      float: none;
+    }
+  }
+
+  #edit-account {
+    @include zen-grid-flow-item(3, 8);
+    @include rhythm-borders(1px, 2);
+    @include border-radius(4px);
+    padding: rhythm(2) $w-gutter-half;
+    border-color: $gray-light;
+    float: right;
+    background-color: $gray-white;
+  }
+
+  .password-strength {
+    width: 10em;
+    top: rhythm(4, $fs-xs);
+  }
+
+  .password-indicator {
+    width: 100%;
+  }
+
+  div.password-confirm {
+    top: rhythm(4.5, $fs-xs);
+    width: 12.5em;
+    margin-right: 0;
+  }
+}
+
+.field-group-label {
+  @include adjust-font-size-to($fs-l);
+  margin-bottom: 0;
+
+}
+
+.link-dashboard {
+  @extend %button;
+  @extend %button-small;
+  @extend %button-primary;
+
+  position: absolute;
+  top: rhythm(-10, $fs-s);
+  right: $w-gutter-half;
+}

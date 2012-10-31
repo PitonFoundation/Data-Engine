@@ -1,0 +1,6 @@
+name = "Data Engine Embed"
+package = Data Engine
+description = "Embed functionality for Data Engine"
+core = 7.x
+
+dependencies[] = menu

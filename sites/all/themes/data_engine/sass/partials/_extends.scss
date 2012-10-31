@@ -1,0 +1,46 @@
+//
+// @file
+// Reusable styles for frequently used elements.
+//
+// ----------------------------------------------------------------------------
+
+// Speech bubble
+%speech-bubble {
+  @include border-radius(8px);
+  @include box-shadow($gray-light 0 1px 0);
+  position: relative;
+  border: 1px solid $gray-lighter;
+  padding: rhythm(4) $w-gutter rhythm(2);
+  margin-bottom: rhythm(3);
+  font-style: italic;
+
+  &:after {
+    // @include icon-sprite(bubble-tail);
+    content: "";
+    display: block;
+    position: absolute;
+    bottom: -18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+%meta {
+  @include adjust-font-size-to($fs-xs);
+  font-family: $sans-typeface;
+
+  &:before {
+    font-size: .875em;
+    margin-right: .5em;
+    position: relative;
+    top: .0875em;
+  }
+}
+
+// Hide text
+%hide-text {
+  text-indent: 110%;
+  overflow: hidden;
+  white-space: nowrap;
+  word-wrap: normal;
+}

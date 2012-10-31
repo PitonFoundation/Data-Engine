@@ -1,0 +1,8 @@
+//
+// @file
+// Silent extends for links.
+//-----------------------------------------------------------------------------
+
+%gray-link {
+  @include link-colors($gray-light, $gray-dark);
+}

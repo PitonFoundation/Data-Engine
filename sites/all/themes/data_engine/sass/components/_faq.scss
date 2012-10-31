@@ -1,0 +1,38 @@
+//
+// @file
+// Faq styles.
+
+.node-faq {
+  > .ds-content {
+    padding-top: rhythm(2);
+    max-width: 33em;
+  }
+
+  .field-name-body {
+    @include adjust-font-size-to($fs-m);
+  }
+}
+
+// JS Processed
+
+.is-collapsed,
+.is-expanded {
+  > .faq-title,
+  > div.faq-title {
+    cursor: pointer;
+
+    &:before {
+      padding-right: .66em;
+      font-size: 12px;
+    }
+
+    &:hover {
+      text-decoration: none;
+    }
+  }
+}
+
+.faq-title {
+  margin: 0;
+  color: $orange;
+}

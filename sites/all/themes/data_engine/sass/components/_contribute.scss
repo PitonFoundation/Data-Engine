@@ -1,0 +1,45 @@
+//
+// @file
+// Contribute page styles.
+// ----------------------------------------------------------------------------
+
+.region-help {
+  margin-bottom: rhythm(4);
+}
+
+.filter-wrapper {
+  display: none;
+}
+
+// Fix throbber position
+#node_dataset_form_group_data_type {
+  .form-item {
+    position: relative;
+  }
+
+  .ajax-progress {
+    position: absolute;
+    top: .15em;
+    left: -22px;
+
+    > .message {
+      display: none;
+    }
+  }
+}
+
+// Remove inner wrapping fieldset.
+#edit-field-organization-und-0 {
+  padding: 0;
+  border: none;
+  margin: 0;
+
+  > legend { display: none; }
+
+  > .fieldset-wrapper {
+    padding: 0; }
+}
+
+#edit-field-organization-und-0-field-organization-name {
+  margin-top: 0;
+}

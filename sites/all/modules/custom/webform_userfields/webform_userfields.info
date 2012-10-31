@@ -1,0 +1,7 @@
+name = Webform User Fields Utility
+description = "Allows for the inclusion of user fields in webforms"
+package = Webform
+core = 7.x
+version = 7.x-0.3-dev
+files[] = webform_userfields.module
+dependencies[] = webform

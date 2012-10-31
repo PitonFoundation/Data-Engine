@@ -1,0 +1,80 @@
+//
+// @file
+// Page layout styles.
+//
+// This file should contain the global layout styles for how regions
+// relate to one another on a given page.
+// ----------------------------------------------------------------------------
+
+
+// Set the page width.
+.page-width {
+  @include zen-grid-container;
+  padding: 0 12px;
+  width: $w-full;
+  margin: 0 auto;
+}
+
+
+// One Sidebar
+// -----------
+.one-sidebar {
+  #sidebar-first,
+  #sidebar-second {
+    clear: left;
+    padding-top: rhythm(3);
+  }
+
+  &.sidebar-first {
+    #content {
+      @include zen-grid-item(6, 3);
+    }
+
+    #sidebar-first {
+      @include zen-grid-item(2, 1);
+      clear: none;
+      padding-top: 0;
+      padding-left: 0;
+    }
+  }
+
+  &.sidebar-second {
+    #content {
+      @include zen-grid-item(5, 1);
+      padding-left: 0;
+    }
+
+    #sidebar-second {
+      @include zen-grid-item(3, 1, right);
+      clear: none;
+      padding-top: 0;
+      padding-left: $w-gutter;
+      padding-right: 0;
+    }
+  }
+}
+
+// Two Sidebars
+// -----------
+.two-sidebars {
+  #sidebar-second {
+    clear: left;
+    padding-top: rhythm(3);
+  }
+
+  #content {
+    @include zen-grid-item(4, 3);
+  }
+
+  #sidebar-first {
+    @include zen-grid-item(2, 1);
+    clear: none;
+    padding-top: 0;
+  }
+
+  #sidebar-second {
+    @include zen-grid-item(2, 1, right);
+    clear: none;
+    padding-top: 0;
+  }
+}
