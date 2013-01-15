@@ -249,7 +249,17 @@
           else {
             return {};
           }
-        }
+        },        
+        pointToLayer: function (feature, latlng) {
+  				return L.circleMarker(latlng, {
+  					radius: 8,
+  					fillColor: feature.properties.style.fillColor,
+  					color: feature.properties.style.color,
+  					weight: 1,
+  					opacity: 1,
+  					fillOpacity: 0.8
+  				});
+  			}
       });
 
       lJSON.on('featureparse', function (e) {

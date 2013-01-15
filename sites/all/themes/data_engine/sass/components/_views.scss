@@ -7,7 +7,7 @@
 // ----------------------------------------------------------------------------
 
 // @todo find/browse datasets: child lists for taxonomy categories
-.page-find, .page-visualize {
+.page-find, .page-gallery {
   ul.children {
     margin-left: 2em;
   }
@@ -96,8 +96,6 @@
 
 .view-Find {
   .view-header {
-    float: left;
-    margin-bottom: rhythm(2, $fs-xs);
     @include adjust-font-size-to($fs-xs);
     font-family: $secondary-typeface;
   }
@@ -107,9 +105,7 @@
   }
 
   .pager--top {
-    position: absolute;
-    top: -1 * rhythm(2);
-    right: 0;
+    margin-top: -1 * rhythm(5);
   }
 
   .view-content {
@@ -141,9 +137,7 @@
 
 .view-visualizations {
   .pager--top {
-    position: absolute;
-    top: -1 * rhythm(2);
-    right: 0;
+    top: -1 * rhythm(7);
   }
 
   .pager {

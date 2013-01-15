@@ -2,13 +2,13 @@
   <div class="search">
     <h3 class="filter-title">Search within Results</h3>
     <input type="search" name="search" value="<?php print $search_value ?>" />
-    <div class="description">Filter datasets by title or year.</div>
+    <div class="description">Filter by title or year.</div>
   </div>
   <?php if (isset($map)): ?>
     <div class="map">
       <h3 class="filter-title">Location</h3>
       <?php print theme('data_engine_browse_map', array('map' => $map)); ?>
-      <div class="description">Filter datasets by area shown on the map.</div>
+      <div class="description">Filter by area shown on the map.</div>
     </div>
   <?php endif; ?>
   <?php if (isset($terms) && count($terms) > 0): ?>

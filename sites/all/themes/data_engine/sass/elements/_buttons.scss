@@ -100,6 +100,12 @@
   @extend %button-primary;
 }
 
+.button--request {
+  @extend %button;
+  @extend %button-medium;
+  @extend %button-red;
+}
+
 .button--view-all {
   @extend %button;
   @extend %button-medium;

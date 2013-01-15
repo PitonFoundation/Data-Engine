@@ -147,6 +147,38 @@
   }
 }
 
+%button-red {
+  @include background-image(
+    linear-gradient(bottom, blend-overlay(rgba($black, .25), $red), blend-overlay(rgba($white, .25), $red))
+  );
+  @include box-shadow (
+    rgba($black, .25) 0 1px 0 0,
+    blend-overlay(rgba($black, .4), $red) 0 -1px 2px 0px inset,
+    blend-overlay(rgba($black, .1), $red) 0 -12px 0 0 inset
+  );
+  @include text-shadow(0 1px 0 blend-overlay(rgba($black, .25), $red));
+  background-color: $red-dark;
+  border: none;
+  color: lighten($red, 40%);
+
+  &:visited {
+    color: lighten($red, 40%);
+  }
+
+  &:hover {
+    @include background-image(
+      linear-gradient(top, blend-overlay(rgba($black, .1), $red), blend-overlay(rgba($white, .1), $red))
+    );
+    color: $white;
+  }
+
+  &:active {
+    @include box-shadow($red 0 1px 2px inset);
+    background-color: $red-dark;
+    color: $white;
+  }
+}
+
 %button-secondary {
   @extend %button;
   @extend %button-small;

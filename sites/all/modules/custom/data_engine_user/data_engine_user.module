@@ -14,7 +14,7 @@ function data_engine_user_block_info() {
     'info' => t('My Downloads link'),
     'cache' => DRUPAL_NO_CACHE
   );
-  
+
   $blocks['my_api_key'] = array(
     'info' => t('My API key'),
     'cache' => DRUPAL_NO_CACHE
@@ -102,6 +102,13 @@ function data_engine_user_form_alter(&$form, &$form_state, $form_id) {
   if ($form_id == "user_profile_form") {
 
     $form['#submit'][] = 'data_engine_user_form_submit';
+
+  } //if
+
+  // Disable terms checkbox on profile edit screen
+  if ($form_id == "user_profile_form" && arg(2) == 'edit') {
+
+    $form['field_terms']['#disabled'] = TRUE;
 
   } //if
 

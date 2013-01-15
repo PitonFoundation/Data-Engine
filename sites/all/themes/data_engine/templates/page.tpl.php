@@ -8,12 +8,6 @@
           </a>
         <?php endif; ?>
       </h1>
-
-      <?php if ($site_slogan): ?>
-        <h2 id="site-slogan">
-         <?php print $site_slogan; ?>
-        </h2>
-      <?php endif; ?>
     </hgroup>
     <?php if ($page['utility']): ?>
       <div id="utility">

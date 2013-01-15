@@ -42,12 +42,22 @@ class DataEngineVisualization {
    * @param  mixed $end       Where to limit the results at
    * @return array
    */
-  public function getData($dataset, $start = FALSE, $end = FALSE) {
-    $data = data_engine_db_records_from_node($dataset, $start, $end);
+  public function getData($datasets, $start = FALSE, $end = FALSE) {
+    
+    if (is_array($datasets)) {
 
-    // now we need for reformat the keys to be nid.key
-    return $this->formatData($dataset, $data);
-  }
+      $data = data_engine_db_records_from_nodes($datasets[0], $datasets[1], $start, $end, $this->config['filters']);
+      return $this->formatData($datasets[0], $data);
+
+    } // if
+    else {
+    
+      $data = data_engine_db_records_from_node($datasets, $start, $end, $this->config['filters'][$datasets->nid]);
+      return $this->formatData($datasets, $data);
+
+    } // else
+  
+  } // getData
 
   /**
    * Return the value of the key in the data row
@@ -80,7 +90,7 @@ class DataEngineVisualization {
         $keyMap[$newKey] = $key;
       }
     }
-
+    
     if (isset($keyMap[$normalizedKey])) {
       return $dataRow[$keyMap[$normalizedKey]];
     }

@@ -15,6 +15,7 @@
 
 .node-dataset {
   .button--visualize,
+  .button--request,
   .flag-link-toggle {
     display: block;
   }
@@ -125,4 +126,9 @@
   .tag {
     margin-right: $w-gutter / 4;
   }
+}
+
+.dataset-records > .fieldset-wrapper {
+  height: 13em;
+  overflow-y: scroll;
 }

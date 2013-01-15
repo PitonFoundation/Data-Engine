@@ -39,14 +39,14 @@
     </div>
   <?php endif; ?>
 
+  <?php if ($pager): ?>
+    <div class="pager--top"><?php print $pager; ?></div>
+  <?php endif; ?>
+
   <?php if ($exposed): ?>
     <div class="view-filters">
       <?php print $exposed; ?>
     </div>
-  <?php endif; ?>
-
-  <?php if ($pager): ?>
-    <div class="pager--top"><?php print $pager; ?></div>
   <?php endif; ?>
 
   <?php if ($attachment_before): ?>

@@ -1,21 +1,25 @@
 <?php
 
-define('DATA_ENGINE_DB_PLACEHOLDER', '___');
+// A short string that does not appear in table or field names.
+define('DATA_ENGINE_DB_PLACEHOLDER', 'qxq');
 
 /**
  * Implements hook_cron().
  * Checks for new data sets.
  */
+/*
 function data_engine_db_cron() {
 
   data_engine_db_sync_taxonomy_from_reference('ref_geographic_level', 'location_types', 1);
   data_engine_db_sync_taxonomy_from_reference('ref_domain', 'data_categories', 2);
-  data_engine_db_sync_taxonomy_from_reference('ref_subdomain', 'data_categories', 2);
+  data_engine_db_sync_taxonomy_from_reference('ref_subdomain', 'data_categories', 2, 'ref_domain');
   data_engine_db_sync_taxonomy_from_reference('ref_source', 'sources', 5);
 
   $datasets = data_engine_db_datasets();
   $queue = DrupalQueue::get('data_engine_db_dataset_updates');
   $count = $queue->numberOfItems();
+
+  $node_saved = FALSE;
 
   foreach ($datasets as $id) {
 
@@ -23,11 +27,16 @@ function data_engine_db_cron() {
 
     if ($info['nid'] == '') {
 
-      $info = data_engine_db_dataset_info($id);
-      $node = data_engine_db_node_from_info($info);
-      node_save($node);
-      data_engine_db_set_dataset_nid($info, $node->nid);
+      if (!$node_saved) {
+  
+        $info = data_engine_db_dataset_info($id);
+        $node = data_engine_db_node_from_info($info);
+        node_save($node);
+        data_engine_db_set_dataset_nid($info, $node->nid);
+        $node_saved = TRUE;
 
+      } // if
+      
     } // if
     elseif ($count == 0) {
 
@@ -41,6 +50,7 @@ function data_engine_db_cron() {
   } // foreach
 
 } // data_engine_db_cron
+*/
 
 /**
  * Implements hook_cron_queue_info().
@@ -56,20 +66,41 @@ function data_engine_db_cron_queue_info() {
 } // data_engine_db_cron_queue_info
 
 /**
+ * Updates a dataset based on NID.
+ */
+function data_engine_db_update_dataset_for_nid($nid) {
+  
+  $node = node_load($nid);
+  $info = data_engine_db_info_for_node($node);
+
+  $info = data_engine_db_dataset_info($info->id);
+
+  data_engine_db_dataset_update($info);
+  
+} // data_engine_db_update_dataset_for_nid
+
+/**
  * Updates a given dataset, based on info.
  */
 function data_engine_db_dataset_update($info) {
 
   $node = node_load($info['nid']);
-  $original_node = clone $node;
-  $updated_node = data_engine_db_node_from_info($info, $node);
   
-  $original_wrapper = entity_metadata_wrapper('node', $original_node);
-  $updated_wrapper = entity_metadata_wrapper('node', $updated_node);
+  if ($node) {
 
-  // if ($original_wrapper->field_query_information->value() != $updated_wrapper->field_query_information->value()) {      
+    $original_node = clone $node;
+    $updated_node = data_engine_db_node_from_info($info, $node);
+    
+    $original_wrapper = entity_metadata_wrapper('node', $original_node);
+    $updated_wrapper = entity_metadata_wrapper('node', $updated_node);
+
     node_save($updated_node);
-  // } // if
+
+  } // if
+  else {
+    dpm($info, 'node not found');
+    watchdog('data_engine_db', 'Node not found: ' . $info['nid'] . ' for dataset: ' . $info['id'], WATCHDOG_ERROR);
+  } // else
 
 } // data_engine_db_dataset_update
 
@@ -118,13 +149,14 @@ function data_engine_db_reference_table($table_name) {
 /**
  * Returns term from a refernce ID.
  */
-function data_engine_db_term_from_reference_id($id, $vocabulary_name, $full_term = TRUE) {
+function data_engine_db_term_from_reference_id($id, $table_name, $vocabulary_name, $full_term = TRUE) {
 
   $query = new EntityFieldQuery();
   $entities = $query
     ->entityCondition('entity_type', 'taxonomy_term')
     ->entityCondition('bundle', $vocabulary_name)
     ->fieldCondition('field_database_id', 'value', $id)
+    ->fieldCondition('field_database_table', 'value', $table_name)
     ->range(0, 1)
     ->execute();
   
@@ -140,6 +172,37 @@ function data_engine_db_term_from_reference_id($id, $vocabulary_name, $full_term
     return array_shift($terms);
     
   } // if
+  else {
+
+    $query = new EntityFieldQuery();
+    $entities = $query
+      ->entityCondition('entity_type', 'taxonomy_term')
+      ->entityCondition('bundle', $vocabulary_name)
+      ->fieldCondition('field_database_id', 'value', $id)
+      ->range(0, 1)
+      ->execute();
+
+    if (isset($entities['taxonomy_term']) && count($entities['taxonomy_term']) > 0) {
+
+      $tids = array_keys($entities['taxonomy_term']);
+      $terms = entity_load('taxonomy_term', $tids);
+      $term = array_shift($terms);
+      $term_wrapper = entity_metadata_wrapper('taxonomy_term', $term);
+      
+      if ($term_wrapper->field_database_table->value() == '') {
+
+        if (!$full_term) {
+          return $tids[0];
+        } // if
+  
+        $terms = entity_load('taxonomy_term', $tids);
+        return array_shift($terms);
+
+      } // if
+
+    } // if
+    
+  } // else
 
   return FALSE;
     
@@ -148,29 +211,34 @@ function data_engine_db_term_from_reference_id($id, $vocabulary_name, $full_term
 /**
  * Syncs a taxonomy from a reference table.
  */
-function data_engine_db_sync_taxonomy_from_reference($table_name, $vocabulary_name, $vid) {
+function data_engine_db_sync_taxonomy_from_reference($table_name, $vocabulary_name, $vid, $parent_table = FALSE) {
 
   $records = data_engine_db_reference_table($table_name);
-  
+
   foreach ($records as $id => $record) {
     
-    $term_id = data_engine_db_term_from_reference_id($id, $vocabulary_name, FALSE);
+    $term_id = data_engine_db_term_from_reference_id($id, $table_name, $vocabulary_name, FALSE);
 
     if (!$term_id) {
 
-      if (isset($record->parent_id)) {      
-        $parent_term_id = data_engine_db_term_from_reference_id($record->parent_id, $vocabulary_name, FALSE);
+      if (isset($record->parent_id) && $parent_table) {      
+        $parent_term_id = data_engine_db_term_from_reference_id($record->parent_id, $parent_table, $vocabulary_name, FALSE);
         $term = entity_create('taxonomy_term', array('vocabulary_machine_name' => $vocabulary_name, 'name' => $record->name, 'vid' => $vid, 'parent' => $parent_term_id));
       } // if
       else {
         $term = entity_create('taxonomy_term', array('vocabulary_machine_name' => $vocabulary_name, 'name' => $record->name, 'vid' => $vid));
       } // else
-      $term_wrapper = entity_metadata_wrapper('taxonomy_term', $term);
-      $term_wrapper->field_database_id->set($id);
-      
-      taxonomy_term_save($term);
 
     } // if
+    else {      
+      $term = taxonomy_term_load($term_id);
+    } // else
+    
+    $term_wrapper = entity_metadata_wrapper('taxonomy_term', $term);
+    $term_wrapper->field_database_id->set($id);
+    $term_wrapper->field_database_table->set($table_name);
+
+    taxonomy_term_save($term);
 
   } // foreach
   
@@ -224,7 +292,7 @@ function data_engine_db_dataset_info($id, $skip_tables = FALSE) {
       $info['tables'][] = data_engine_db_table_info($table_id);
     } // foreach
 
-    list($geo_table_id, $field) = explode('.', $info['metadata']->gkey);
+    list($geo_table_id, $field) = explode('.', $info['metadata']->gkey[1]);
     $info['geo_table'] = data_engine_db_geo_table_info($geo_table_id);
 
   } // if
@@ -258,9 +326,12 @@ function data_engine_db_table_info($id) {
   $field_machine_names = data_engine_db_fields_in_table($info['title']);
 
   foreach ($info['fields'] as $key => $field) {
-    if (isset($field_machine_names[$key])) {
-      $info['fields'][$key]->machine_name = $field_machine_names[$key];
+    if ($field->field_name != '') {
+      $info['fields'][$key]->machine_name = $field->field_name;
     } // if
+    elseif (isset($field_machine_names[$key])) {
+      $info['fields'][$key]->machine_name = $field_machine_names[$key];
+    } // elseif
   } // foreach
 
   return $info;
@@ -316,6 +387,9 @@ function data_engine_db_node_from_info($info, $node = FALSE) {
   if ($node == FALSE) {
     $node = entity_create('node', array('type' => 'dataset', 'title' => $info['title']));
   } // if
+  else {
+    $node->title = $info['title'];
+  } // else
 
   $json = json_encode($info);  
 
@@ -323,18 +397,24 @@ function data_engine_db_node_from_info($info, $node = FALSE) {
   $wrapper->field_query_information->set($json);
   
   $first_table = array_shift($info['tables']);
-  
+
   // Set year
   
   if (isset($first_table['tags']['year'])) {
     $wrapper->field_date_range->set($first_table['tags']['year']);
   } // if
   
+  // Set large
+
+  if (isset($info['metadata']->large_dataset)) {
+    $wrapper->field_large_dataset->set($info['metadata']->large_dataset);
+  } // if
+
   // Set source
 
   if (isset($first_table['tags']['source']) && $first_table['tags']['source'] != '') {
-    
-    $source_term = data_engine_db_term_from_reference_id($first_table['tags']['source'], 'sources');
+
+    $source_term = data_engine_db_term_from_reference_id($first_table['tags']['source'], 'ref_source', 'sources');
 
     if ($source_term) {
 
@@ -342,17 +422,36 @@ function data_engine_db_node_from_info($info, $node = FALSE) {
       $source->setHostEntity('node', $node);
       $source_wrapper = entity_metadata_wrapper('field_collection_item', $source);
       $source_wrapper->field_organization_name->set($source_term);
-      $source->save();
+
+      // Set source website
+
+      if (isset($first_table['tags']['source_website']) && $first_table['tags']['source_website'] != '') {
+        $source_wrapper->field_website->url->set($first_table['tags']['source_website']);
+      } // if
+
+      $source->save(TRUE);
 
     } // if
-    
+
+  } // if
+
+  // Set description
+  
+  if (isset($first_table['tags']['description']) && $first_table['tags']['description'] != '') {
+    $wrapper->body->value->set($first_table['tags']['description']);
+  } // if
+  
+  // Set data considerations
+  
+  if (isset($first_table['tags']['data_consideration']) && $first_table['tags']['data_consideration'] != '') {
+    $wrapper->field_data_considerations->value->set($first_table['tags']['data_consideration']);
   } // if
   
   // Set location type
   
   if (isset($first_table['tags']['geographic_level']) && $first_table['tags']['geographic_level'] != '') {
 
-    $location_type_term = data_engine_db_term_from_reference_id($first_table['tags']['geographic_level'], 'location_types');
+    $location_type_term = data_engine_db_term_from_reference_id($first_table['tags']['geographic_level'], 'ref_geographic_level', 'location_types');
 
     if ($location_type_term) {
       $wrapper->field_location_type->set($location_type_term);      
@@ -365,7 +464,7 @@ function data_engine_db_node_from_info($info, $node = FALSE) {
   if (isset($first_table['tags']['domain']) && $first_table['tags']['domain'] != '') {
 
     $terms = array();
-    $domain_term = data_engine_db_term_from_reference_id($first_table['tags']['domain'], 'data_categories');
+    $domain_term = data_engine_db_term_from_reference_id($first_table['tags']['domain'], 'ref_domain', 'data_categories');
 
     if ($domain_term) {
       $terms[] = $domain_term;
@@ -373,7 +472,7 @@ function data_engine_db_node_from_info($info, $node = FALSE) {
 
     if (isset($first_table['tags']['subdomain']) && $first_table['tags']['subdomain'] != '') {
     
-      $subdomain_term = data_engine_db_term_from_reference_id($first_table['tags']['subdomain'], 'data_categories');
+      $subdomain_term = data_engine_db_term_from_reference_id($first_table['tags']['subdomain'], 'ref_subdomain', 'data_categories');
     
       if ($subdomain_term) {
         $terms[] = $subdomain_term;
@@ -409,37 +508,78 @@ function data_engine_db_set_dataset_nid($info, $nid) {
 } // data_engine_db_set_dataset_nid
 
 /**
+ * Translate table to alias.
+ */
+function data_engine_db_table_to_alias(&$table) {
+
+  return 'table' . $table->id;
+
+} // data_engine_db_table_to_alias
+
+/**
+ * Translate alias to table.
+ */
+function data_engine_db_alias_to_table_name($alias) {
+
+  $table_names = &drupal_static(__FUNCTION__); 
+
+  if (!isset($table_names)) {
+    $table_names = array();
+  } // if
+
+  if (!isset($table_names[$alias])) {
+
+    $id = str_replace('table', '', $alias);
+
+    db_set_active('data');
+
+    $object = db_query('SELECT t.table_name FROM data_tables t WHERE t.id = :id', array(':id' => $id))->fetchObject();
+    
+    db_set_active('default');
+
+    if ($object) {
+      $table_names[$alias] = $object->table_name;
+    } // if
+    else {
+      $table_names[$alias] = $alias;
+    } // else
+
+  } // if
+
+  return $table_names[$alias];
+
+} // data_engine_db_alias_to_table
+
+/**
  * Creates a query from a dataset node.
  */
 function data_engine_db_query_from_node($node, $skip_fields = FALSE) {
 
   try {
 
-    $wrapper = entity_metadata_wrapper('node', $node);
-    $info = json_decode($wrapper->field_query_information->value());
+    $info = data_engine_db_info_for_node($node);
 
     if ($info) {
-    
-      $foreign_keys = data_engine_db_foreign_keys_by_table_id($info->metadata->fkeys);
 
+      $tables_in_query = array();
       $first_table = array_shift($info->tables);
-      $key_for_first_table = $foreign_keys[$first_table->id];
 
       db_set_active('data');
 
-      $query = db_select($first_table->title, $first_table->title);
+      $query = db_select($first_table->title, data_engine_db_table_to_alias($first_table));
+      $tables_in_query[] = $first_table;
 
       if (!$skip_fields) {
         data_engine_db_add_table_fields_to_query($first_table, $query);
       } // if
 
       if (count($info->tables) > 0) {
-        
+
         foreach ($info->tables as $table) {
-          
-          $key_for_table = $foreign_keys[$table->id];
-          $query->join($table->title, $table->title, $table->title . '.' . $key_for_table . ' = ' . $first_table->title . '.' . $key_for_first_table);
-          
+
+          data_engine_db_join_table_to_query($query, $table, $tables_in_query, $info->metadata);          
+          $tables_in_query[] = $table;
+
           if (!$skip_fields) { 
             data_engine_db_add_table_fields_to_query($table, $query);
           } // if
@@ -480,45 +620,32 @@ function data_engine_db_query_from_nodes($node_one, $node_two) {
   $node_one_wrapper = entity_metadata_wrapper('node', $node_one);
   $node_one_info = json_decode($node_one_wrapper->field_query_information->value());
 
-  $node_one_geo_keys = data_engine_db_foreign_keys_by_table_id(array($node_one_info->metadata->gkey));
   $node_one_geo_table = $node_one_info->geo_table;
-  $node_one_geo_key = $node_one_geo_keys[$node_one_geo_table->id];
 
   // Get query for first node.
 
   $query = data_engine_db_geo_query_from_node($node_one);
+  
+  $tables_in_query = $node_one_info->tables;
+  $tables_in_query[] = $node_one_geo_table;
 
   $node_two_wrapper = entity_metadata_wrapper('node', $node_two);
   $node_two_info = json_decode($node_two_wrapper->field_query_information->value());
-
-  $node_two_foreign_keys = data_engine_db_foreign_keys_by_table_id($node_two_info->metadata->fkeys);
-
-  $node_two_first_table = array_shift($node_two_info->tables);
-  $node_two_key_for_first_table = $node_two_foreign_keys[$node_two_first_table->id];
 
   try {
 
     db_set_active('data');
 
-    // Join dataset 2 first table to dataset 1 geo.
+    // Join dataset 2 tables
 
-    $query->join($node_two_first_table->title, $node_two_first_table->title, $node_one_geo_table->title . '.' . $node_one_geo_key . ' = ' . $node_two_first_table->title . '.' . $node_two_key_for_first_table);
-    
-    if (count($node_two_info->tables) > 0) {
-
-      // Join dataset 2 additional tables to first table.
-
-      foreach ($node_two_info->tables as $table) {
-            
-        $key_for_table = $foreign_keys[$table->id];
-        $query->join($table->title, $table->title, $table->title . '.' . $key_for_table . ' = ' . $node_two_first_table->title . '.' . $node_two_key_for_first_table);
-            
-        data_engine_db_add_table_fields_to_query($table, $query);
-  
-      } // foreach
+    foreach ($node_two_info->tables as $table) {
           
-    } // if
-  
+      if (data_engine_db_join_table_to_query($query, $table, $tables_in_query, $node_two_info->metadata)) {
+        data_engine_db_add_table_fields_to_query($table, $query);
+      } // if
+
+    } // foreach
+            
     db_set_active('default');
 
     return $query;
@@ -546,20 +673,14 @@ function data_engine_db_geo_query_from_node($node, $skip_fields = FALSE) {
     $wrapper = entity_metadata_wrapper('node', $node);
     $info = json_decode($wrapper->field_query_information->value());
 
-    $foreign_keys = data_engine_db_foreign_keys_by_table_id($info->metadata->fkeys);
-
     $first_table = array_shift($info->tables);
-    $key_for_first_table = $foreign_keys[$first_table->id];
-
-    $geo_keys = data_engine_db_foreign_keys_by_table_id(array($info->metadata->gkey));
     $geo_table = $info->geo_table;
-    $geo_key = $geo_keys[$geo_table->id];
 
     $query = data_engine_db_query_from_node($node, $skip_fields);
 
     db_set_active('data');
 
-    $query->join($geo_table->title, $geo_table->title, $geo_table->title . '.' . $geo_key . ' = ' . $first_table->title . '.' . $key_for_first_table);
+    data_engine_db_add_query_join_from_metadata($query, $first_table, $geo_table, $info->metadata);
 
     db_set_active('default');
     
@@ -579,16 +700,98 @@ function data_engine_db_geo_query_from_node($node, $skip_fields = FALSE) {
 } // data_engine_db_geo_query_from_node
 
 /**
+ * Returns array of geo IDs for dataset.
+ */
+function data_engine_db_geo_ids_from_node(&$node) {
+
+  $wrapper = entity_metadata_wrapper('node', $node);
+  $info = json_decode($wrapper->field_query_information->value());
+
+  $query = data_engine_db_geo_query_from_node($node, TRUE);
+
+  $geo_table = $info->geo_table;
+  $geo_key = data_engine_db_key_for_table($info->metadata, $geo_table);
+
+  $query->addField(data_engine_db_table_to_alias($geo_table), $geo_key, data_engine_db_table_to_alias($geo_table) . DATA_ENGINE_DB_PLACEHOLDER . $geo_key);
+  
+  $records = data_engine_db_query_to_records($query);
+  
+  $ids = array();
+  
+  foreach ($records as $record) {
+    $ids[] = $record[$geo_table->title . '.' . $geo_key];
+  } // foreach
+  
+  return $ids;
+  
+} // data_engine_db_geo_ids_from_node
+
+/**
+ * Return array of values for a given field.
+ */
+function data_engine_db_values_for_node_key(&$node, $key) {
+  
+  $values = array();
+
+  $query = data_engine_db_geo_query_from_node($node, TRUE);
+
+  list($table_name, $field) = explode('.', $key);
+  
+  $table = FALSE;
+  
+  $table = data_engine_db_table_from_node_by_name($node, $table_name);
+    
+  if ($table) {
+    
+    $query->addField(data_engine_db_table_to_alias($table), $field, data_engine_db_table_to_alias($table) . DATA_ENGINE_DB_PLACEHOLDER . $field);
+    $query->orderBy(data_engine_db_table_to_alias($table) . DATA_ENGINE_DB_PLACEHOLDER . $field, 'ASC');
+    $query->distinct();
+
+    $records = data_engine_db_query_to_records($query);
+      
+    foreach ($records as $record) {
+      $values[] = $record[$table->title . '.' . $field];
+    } // foreach
+
+  } // if
+
+  return $values;
+  
+} // data_engine_db_values_for_node_key
+
+function data_engine_db_table_from_node_by_name(&$node, $table_name) {
+  
+  $info = data_engine_db_info_for_node($node);
+  
+  foreach ($info->tables as $table) {
+    if ($table->title == $table_name) {
+       return $table;
+    }
+  }
+  
+  if ($info->geo_table->title == $table_name) {
+    return $info->geo_table;
+  } // if
+  
+  return FALSE;
+  
+} // data_engine_db_table_from_node_by_name
+
+/**
  * Returns array with table => field structure, based on table.field structure.
  */
 function data_engine_db_foreign_keys_by_table_id($keys_array) {
 
   $keys = array();
 
-  foreach ($keys_array as $key) {
+  foreach ($keys_array as $key_pair) {
 
-    list($table, $field) = explode('.', $key);
-    $keys[$table] = $field;
+    list($first_key, $second_key) = $key_pair;
+
+    list($first_table, $first_field) = explode('.', $first_key);
+    list($second_table, $second_field) = explode('.', $second_key);
+
+    $keys[$first_table . '-' . $second_table] = $field;
 
   } // foreach
 
@@ -596,18 +799,178 @@ function data_engine_db_foreign_keys_by_table_id($keys_array) {
 
 } // data_engine_db_foreign_keys_by_table_id
 
+function data_engine_db_key_for_table(&$metadata, &$table, $join_table = FALSE) {
+
+  $key_pairs = $metadata->fkeys;
+  $key_pairs[] = $metadata->gkey;
+  
+  foreach ($key_pairs as $key_pair) {
+    
+    list($key_one, $key_two) = $key_pair;
+    
+    list($pair_table_one, $field_one) = explode('.', $key_one);
+    list($pair_table_two, $field_two) = explode('.', $key_two);
+
+    if (
+      ($pair_table_one == $table->id) &&
+      (!$join_table || $pair_table_two == $join_table->id)
+    ) {
+    
+      return $field_one;
+
+    } // if
+    elseif (
+      ($pair_table_two == $table->id) &&
+      (!$join_table || $pair_table_one == $join_table->id)
+    ) {
+    
+      return $field_two;
+
+    } // elseif
+
+  } // foreach
+
+  return FALSE;
+
+} // data_engine_db_key_for_table
+
+/**
+ * Adds join to query based on foreign key metadata.
+ */
+function data_engine_db_add_query_join_from_metadata(&$query, &$table_one, &$table_two, &$metadata) {
+  
+  $key_pairs = $metadata->fkeys;
+  $key_pairs[] = $metadata->gkey;
+  
+  foreach ($key_pairs as $key_pair) {
+    
+    list($key_one, $key_two) = $key_pair;
+    
+    list($pair_table_one, $field_one) = explode('.', $key_one);
+    list($pair_table_two, $field_two) = explode('.', $key_two);
+    
+    if ($pair_table_one == $table_one->id && $pair_table_two == $table_two->id) {
+      
+      $query->join($table_two->title, data_engine_db_table_to_alias($table_two), data_engine_db_table_to_alias($table_two) . '.' . $field_two . ' = ' . data_engine_db_table_to_alias($table_one) . '.' . $field_one);
+      return TRUE;
+
+    } // if
+    elseif ($pair_table_two == $table_one->id && $pair_table_one == $table_two->id) {
+
+      $query->join($table_two->title, data_engine_db_table_to_alias($table_two), data_engine_db_table_to_alias($table_two) . '.' . $field_one . ' = ' . data_engine_db_table_to_alias($table_one) . '.' . $field_two);
+      return TRUE;
+
+    } // elseif
+
+  } // foreach
+  
+  return FALSE;
+
+} // data_engine_db_add_query_join_from_metadata
+
+/**
+ * Joins given table to query, based on already-joined tables and metadata.
+ */
+function data_engine_db_join_table_to_query(&$query, &$new_table, $existing_tables, &$metadata) {
+  
+  // Look for a join on each table.
+  
+  foreach ($existing_tables as $existing_table) {
+  
+    if (data_engine_db_add_query_join_from_metadata($query, $existing_table, $new_table, $metadata)) {
+      return TRUE;
+    } // if
+
+  } // foreach
+  
+  return FALSE;
+  
+} // data_engine_db_join_table_to_query
+
 /**
  * Returns records from a dataset, in range.
  */
-function data_engine_db_records_from_node($node, $start = FALSE, $limit = FALSE) {
+function data_engine_db_records_from_node($node, $start = FALSE, $limit = FALSE, $filters = FALSE) {
 
   try {
 
     $records = array();
 
-    $query = data_engine_db_query_from_node($node);
+    $info = data_engine_db_info_for_node($node);
+    $query = data_engine_db_geo_query_from_node($node);
+
+    if ($info->metadata->display_name) {
+
+      $id_to_name = data_engine_db_table_id_to_name($info);
+      list($table_id, $field_name) = explode('.', $info->metadata->display_name);
+      $table_name = $id_to_name[$table_id];
+      $display_name_table = data_engine_db_table_from_node_by_name($node, $table_name);
+      
+      $query->addField(data_engine_db_table_to_alias($display_name_table), $field_name, data_engine_db_table_to_alias($display_name_table) . DATA_ENGINE_DB_PLACEHOLDER . $field_name);
+
+    } // if
+
+    if (is_array($filters) && count($filters) > 0) {
+      
+      foreach ($filters as $filter => $values) {
+      
+        list($table_name, $field_name) = explode('.', $filter);
+        $filter_table = data_engine_db_table_from_node_by_name($node, $table_name);
+        $query->condition(data_engine_db_table_to_alias($filter_table) . '.' . $field_name, $values, 'IN');
+
+      } // foreach
+      
+    } // if
+
+    if ($start !== FALSE && $limit !== FALSE) {
+      $query->range($start, $limit);
+    } // if
+
+    db_set_active('default');
+    
+    return data_engine_db_query_to_records($query);
+
+  } // try
+  catch (Exception $e) {
+
+    db_set_active('default');
+    watchdog('data_engine_db', 'DB Error: ' . $e->getMessage() .
+      ' [NID: ' . $node->nid . '; Line: ' . $e->getLine() . '; File: ' . $e->getFile() . ']' .
+      "\n" . $e->getTraceAsString(), array(), WATCHDOG_ERROR);
+    return FALSE;
+
+  } // catch
+
+} // data_engine_db_records_from_node
+
+/**
+ * Returns records from a dataset, in range.
+ */
+function data_engine_db_records_from_nodes($node_one, $node_two, $start = FALSE, $limit = FALSE, $filters = FALSE) {
+
+  try {
+
+    $records = array();
+
+    $query = data_engine_db_query_from_nodes($node_one, $node_two);
 
     db_set_active('data');
+
+    if (is_array($filters) && count($filters) > 0) {
+      
+      foreach ($filters as $dataset_filters) {
+      
+        foreach ($dataset_filters as $filter => $values) {
+        
+          list($table_name, $field_name) = explode('.', $filter);
+          $filter_table = data_engine_db_table_from_node_by_name($node, $table_name);
+          $query->condition(data_engine_db_table_to_alias($filter_table) . '.' . $field_name, $values, 'IN');
+  
+        } // foreach
+        
+      } // foreach
+      
+    } // if
 
     if ($start !== FALSE && $limit !== FALSE) {
       $query->range($start, $limit);
@@ -628,16 +991,58 @@ function data_engine_db_records_from_node($node, $start = FALSE, $limit = FALSE)
 
   } // catch
 
-} // data_engine_db_records_from_node
+} // data_engine_db_records_from_nodes
 
 /**
- * Returns records from a dataset, in range.
+ * Returns record count from a dataset.
  */
 function data_engine_db_record_count_from_node($node) {
 
   $records = array();
 
   $query = data_engine_db_query_from_node($node);
+
+  if ($query) {
+
+    try {
+  
+      db_set_active('data');
+  
+      $result = $query->countQuery()->execute()->fetchField();
+  
+      db_set_active('default');
+  
+      return $result;
+      
+    } // try
+    catch (Exception $e) {
+
+      db_set_active('default');
+      watchdog('data_engine_db', 'DB Error: ' . $e->getMessage() .
+        ' [NID: ' . $node->nid . '; Line: ' . $e->getLine() . '; File: ' . $e->getFile() . ']' .
+        "\n" . $e->getTraceAsString(), array(), WATCHDOG_ERROR);
+      return 0;
+  
+    } // catch
+
+  } // if
+  else {
+
+    db_set_active('default');
+    return FALSE;
+
+  } // else
+
+} // data_engine_db_record_count_from_node
+
+/**
+ * Returns record count from datasets.
+ */
+function data_engine_db_record_count_from_nodes($node_one, $node_two) {
+
+  $records = array();
+
+  $query = data_engine_db_query_from_nodes($node_one, $node_two);
 
   if ($query) {
 
@@ -657,7 +1062,7 @@ function data_engine_db_record_count_from_node($node) {
 
   } // else
 
-} // data_engine_db_record_count_from_node
+} // data_engine_db_record_count_from_nodes
 
 /**
  * Returns array of field names from given table info.
@@ -674,6 +1079,32 @@ function data_engine_db_field_names_from_table($table) {
 
 } // data_engine_db_field_names_from_table
 
+function data_engin_db_field_machine_name_to_display_name(&$node, $machine_name) {
+
+  $info = data_engine_db_info_for_node($node);
+  
+  list($table_name, $field_name) = explode('.', $machine_name);
+
+  foreach ($info->tables as $table) {
+    
+    if ($table->title == $table_name) {
+    
+      foreach ($table->fields as $field) {
+
+        if ($field->machine_name == $field_name) {
+          return $field->verbose_name;
+        } // if       
+
+      } // foreach
+    
+    } // if
+    
+  } // foreach
+  
+  return $field_name;
+  
+} // data_engin_db_field_machine_name_to_display_name
+
 /**
  * Adds table fields to query.
  */
@@ -682,7 +1113,7 @@ function data_engine_db_add_table_fields_to_query($table, $query) {
   $fields = data_engine_db_field_names_from_table($table);
 
   foreach ($fields as $field) {
-    $query->addField($table->title, $field, $table->title . DATA_ENGINE_DB_PLACEHOLDER . $field);
+    $query->addField(data_engine_db_table_to_alias($table), $field, data_engine_db_table_to_alias($table) . DATA_ENGINE_DB_PLACEHOLDER . $field);
   } // foreach
   
 } // data_engine_db_add_table_fields_to_query
@@ -690,23 +1121,33 @@ function data_engine_db_add_table_fields_to_query($table, $query) {
 /**
  * Returns field machine and human names for a given dataset.
  */
-function data_engine_db_fields_from_dataset($node, $types = FALSE) {
+function data_engine_db_fields_from_dataset($node, $types = FALSE, $info_limit = TRUE) {
 
-  static $fields = array();
+  $fields = &drupal_static(__FUNCTION__); 
+
+  if (!isset($fields)) {
+    $fields = array();
+  } // if
   
   if (!isset($fields[$node->nid])) {
 
     $wrapper = entity_metadata_wrapper('node', $node);
     $info = json_decode($wrapper->field_query_information->value());
-  
+
     foreach ($info->tables as $table) {
-  
+
       foreach ($table->fields as $field) {
   
         if ($types === FALSE || in_array($field->data_type, $types)) {
   
-          $human_readable_name = ($field->verbose_name) ? $field->verbose_name : $field->field_name;
-          $fields[$node->nid][$table->title . '.' . $field->machine_name] = $human_readable_name;
+          $table_id_notation = $table->id . '.' . $field->machine_name;
+    
+          if ($info_limit === FALSE || !isset($info->metadata->fields) || in_array($table_id_notation, $info->metadata->fields)) {
+  
+            $human_readable_name = ($field->verbose_name) ? $field->verbose_name : $field->field_name;
+            $fields[$node->nid][$table->title . '.' . $field->machine_name] = $human_readable_name;
+
+          } // if
   
         } // if
   
@@ -715,7 +1156,7 @@ function data_engine_db_fields_from_dataset($node, $types = FALSE) {
     } // foreach
 
   } // if
-
+  
   return $fields[$node->nid];
 
 } // data_engine_db_fields_from_dataset
@@ -728,12 +1169,16 @@ function data_engine_db_index_field_from_dataset($node) {
   $wrapper = entity_metadata_wrapper('node', $node);
   $info = json_decode($wrapper->field_query_information->value());
 
-  list($index_table_id, $index_field) = explode('.', $info->metadata->fkeys[0]);
+  $first_table = array_shift($info->tables);
 
-  foreach ($info->tables as $table) {
+  $gkeys = $info->metadata->gkey;
 
-    if ($table->id == $index_table_id) {
-      return $table->title . '.' . $index_field;
+  foreach ($gkeys as $gkey) {
+
+    list($table_id, $index_field) = explode('.', $gkey);
+
+    if ($first_table->id == $table_id) {
+      return $first_table->title . '.' . $index_field;
     } // if
 
   } // foreach
@@ -745,14 +1190,13 @@ function data_engine_db_index_field_from_dataset($node) {
 /**
  * Returns geo data from dataset, for mapping.
  */
-function data_engine_db_geo_records_from_node($node, $start = FALSE, $limit = FALSE) {
+function data_engine_db_geo_records_from_node($node, $start = FALSE, $limit = FALSE, $centroid = FALSE, $filters = FALSE) {
 
   try {
 
     $records = array();
 
-    $wrapper = entity_metadata_wrapper('node', $node);
-    $info = json_decode($wrapper->field_query_information->value());
+    $info = data_engine_db_info_for_node($node);
 
     $geo_table = $info->geo_table;
 
@@ -760,10 +1204,27 @@ function data_engine_db_geo_records_from_node($node, $start = FALSE, $limit = FA
 
     db_set_active('data');
 
-    $query->addExpression('ST_AsGeoJSON(' . $geo_table->title . '.geom)', 'geojson');
+    if ($centroid) {
+      $query->addExpression('ST_AsGeoJSON(ST_Centroid(' . data_engine_db_table_to_alias($geo_table) . '.geom))', 'geojson');
+    } // if
+    else {
+      $query->addExpression('ST_AsGeoJSON(' . data_engine_db_table_to_alias($geo_table) . '.geom)', 'geojson');
+    } // else
 
     if ($start !== FALSE && $limit !== FALSE) {
       $query->range($start, $limit);
+    } // if
+
+    if (is_array($filters) && count($filters) > 0) {
+
+      foreach ($filters as $filter => $values) {
+
+        list($table_name, $field_name) = explode('.', $filter);
+        $filter_table = data_engine_db_table_from_node_by_name($node, $table_name);
+        $query->condition(data_engine_db_table_to_alias($filter_table) . '.' . $field_name, $values, 'IN');
+
+      } // foreach
+
     } // if
 
     db_set_active('default');
@@ -795,13 +1256,15 @@ function data_engine_db_geo_bounds_from_node($node) {
     $wrapper = entity_metadata_wrapper('node', $node);
     $info = json_decode($wrapper->field_query_information->value());
 
-    $geo_table = $info->geo_table;
-
-    $query = data_engine_db_geo_query_from_node($node, TRUE);
+    $first_table = array_shift($info->tables);
+    $geography = data_engine_db_reference_table('ref_geography');
+    
+    $bounds_table = data_engine_db_geo_table_info($geography[$first_table->tags->geography]->geotable);
 
     db_set_active('data');
 
-    $query->addExpression('ST_AsGeoJSON(ST_Envelope(ST_Union(' . $geo_table->title . '.geom)))', 'geojson');
+    $query = db_select($bounds_table['title'], $bounds_table['title']);
+    $query->addExpression('ST_AsGeoJSON(' . $bounds_table['title'] . '.geom)', 'geojson');
 
     db_set_active('default');
 
@@ -840,7 +1303,7 @@ function data_engine_db_geo_center_from_node($node) {
 
     db_set_active('data');
 
-    $query->addExpression('ST_AsGeoJSON(ST_Centroid(ST_Union(' . $geo_table->title . '.geom)))', 'geojson');
+    $query->addExpression('ST_AsGeoJSON(ST_Centroid(ST_Union(' . data_engine_db_table_to_alias($geo_table) . '.geom)))', 'geojson');
 
     db_set_active('default');
 
@@ -883,13 +1346,23 @@ function data_engine_db_query_to_records($query) {
     db_set_active('data');
   
     $result = $query->execute();
+
     foreach ($result as $record) {
   
       $record_array = (array) $record;
       $altered_array = array();
   
       foreach ($record_array as $key => $value) {
-        $altered_array[str_replace(DATA_ENGINE_DB_PLACEHOLDER, '.', $key)] = $value;
+      
+        $key_parts = explode(DATA_ENGINE_DB_PLACEHOLDER, $key);
+        
+        if (count($key_parts) == 1) {
+          $altered_array[$key] = $value;
+        } // if
+        else {
+          $altered_array[data_engine_db_alias_to_table_name($key_parts[0]) . '.' . $key_parts[1]] = $value;
+        } // else
+      
       } // foreach
   
       $records[] = $altered_array;
@@ -900,7 +1373,7 @@ function data_engine_db_query_to_records($query) {
 
     // Cache for 24 hours.
 
-    cache_set($cache_key, $records, 'cache', REQUEST_TIME + 60 * 60 * 24);
+    cache_set($cache_key, $records, 'cache', REQUEST_TIME + 60 * 60 * 48);
   
     return $records;
 
@@ -916,6 +1389,199 @@ function data_engine_db_query_to_records($query) {
   } // catch
 
 } // data_engine_db_query_to_records
+
+/**
+ * Filters records by dataset field metadata.
+ */
+function data_engine_db_filter_records_by_metadata($records, $node) {
+
+  $filtered = array();
+  $info = data_engine_db_info_for_node($node);
+  $id_to_name = data_engine_db_table_id_to_name($info);
+
+  if (!isset($info->metadata->fields)) {
+    return $records;
+  } // if
+
+  $filter = array();
+
+  foreach ($info->metadata->fields as $field) {
+
+    list($table_id, $field_name) = explode('.', $field);
+    $filter[] = $id_to_name[$table_id] . '.' . $field_name;
+
+  } // foreach
+
+  foreach ($records as $record) {
+
+    $filtered_record = array();
+
+      foreach ($record as $key => $value) {
+
+        if (in_array($key, $filter)) {
+          $filtered_record[$key] = $value;
+        } // if
+
+      } // foreach
+
+    $filtered[] = $filtered_record;
+
+  } // foreach
+
+  return $filtered;
+
+} // data_engine_db_filter_records_by_metadata
+
+/**
+ * Creates id-to-name array from table metadata.
+ */
+function data_engine_db_table_id_to_name(&$info) {
+  
+  $id_to_name = array();
+  
+  foreach ($info->tables as $table) {
+    $id_to_name[$table->id] = $table->title;
+  } // foreach
+
+  $id_to_name[$info->geo_table->id] = $info->geo_table->title;
+
+  return $id_to_name;
+  
+} // data_engine_db_table_id_to_name
+
+/**
+ * Returns info for node.
+ */
+function data_engine_db_info_for_node(&$node) {
+  
+  $info_sets = &drupal_static(__FUNCTION__); 
+  
+  if (!isset($info_sets)) {
+    $info_sets = array();
+  } // if
+  
+  if (!isset($info_sets[$node->nid])) {
+    
+    $wrapper = entity_metadata_wrapper('node', $node);
+    $info_sets[$node->nid] = json_decode($wrapper->field_query_information->value());
+
+  } // if
+
+  $result = clone $info_sets[$node->nid]; 
+  return $result;
+  
+} // data_engine_db_info_for_node
+
+/**
+ * Returns table-name coded pkeys.
+ */
+function data_engine_db_pkeys_for_node(&$node) {
+
+  $pkeys = &drupal_static(__FUNCTION__); 
+
+  if (!isset($pkeys)) {
+    $pkeys = array();
+  } // if
+
+  if (!isset($pkeys[$node->nid])) {
+
+    $pkeys[$node->nid] = array();
+    $info = data_engine_db_info_for_node($node);
+    $gkeys = $info->metadata->gkey;
+
+    foreach ($info->metadata->pkey as $pkey) {
+    
+      if (in_array($pkey, $gkeys)) {
+        $pkey = $info->metadata->display_name;
+      } // if
+
+      $pkeys[$node->nid][] = data_engine_db_table_id_to_name_in_field($pkey, $node);
+
+    } // foreach
+
+  } // if
+  
+  $result = $pkeys[$node->nid];
+  return $result;
+
+} // data_engine_db_pkeys_for_node
+
+/**
+ * Returns table-name coded gkeys.
+ */
+function data_engine_db_gkeys_for_node(&$node) {
+
+  $info = data_engine_db_info_for_node($node);
+  $gkeys = $info->metadata->gkey;
+  
+  return data_engine_db_table_id_to_name_in_field($gkeys, $node);
+
+} // data_engine_db_gkeys_for_node
+
+/**
+ * Changes field list or single field with table ids to table names.
+ */
+function data_engine_db_table_id_to_name_in_field($fields, &$node) {
+
+  // If it's an array, pass each item back in and add to new array.
+
+  if (is_array($fields)) {
+
+    $names = array();
+
+    foreach ($fields as $field) {
+      $names[] = data_engine_db_table_id_to_name_in_field($field, &$node);
+    } // foreach
+
+    return $names;
+
+  } // if
+
+  $info = data_engine_db_info_for_node($node);
+  $id_to_name = data_engine_db_table_id_to_name($info);
+  
+  list($table_id, $field_name) = explode('.', $fields);
+  $table_name = $id_to_name[$table_id];
+  
+  return $table_name . '.' . $field_name;
+
+} // data_engine_db_table_id_to_name_in_field
+
+/**
+ * Replaces gkey with display name.
+ */
+function data_engine_db_set_display_name_attribute($attributes, &$node) {
+
+  $info = data_engine_db_info_for_node($node);
+  
+  $replaced_attributes = array();
+  
+  $id_to_name = data_engine_db_table_id_to_name($info);
+  list($display_table_id, $display_field) = explode('.', $info->metadata->display_name);
+  $display_name = $id_to_name[$display_table_id] . '.' . $display_field;
+    
+  $gkeys = $info->metadata->gkey;
+  $gkey_names = array();
+  
+  foreach ($gkeys as $gkey) {
+    list($gkey_table_id, $gkey_field) = explode('.', $gkey);
+    $gkey_names[] = $id_to_name[$gkey_table_id] . '.' . $gkey_field;
+  } // foreach
+    
+  foreach ($attributes as $key => $attribute) {
+    
+    if (in_array($attribute, $gkey_names)) {
+      $replaced_attributes[$display_name] = $display_name;
+    } // if
+    else {
+      $replaced_attributes[$key] = $attribute;
+    } // else
+    
+  } // foreach
+
+  return $replaced_attributes;
+
+} // data_engine_db_set_display_name_attribute
 
 /**
  * Returns a list of NIDs within given bounds.
@@ -971,13 +1637,13 @@ function data_engine_db_dataset_count_within_bounds($node, $bounds_string) {
   
     db_set_active('data');
   
-    $query->addField($geo_table->title, 'geom', 'geom');
+    $query->addField(data_engine_db_table_to_alias($geo_table), 'geom', 'geom');
     $query->where("ST_Intersects(
       ST_GeomFromText(
         ST_AsText(
           ST_Envelope('" . $linestring . "'::geometry)
         ), 4269
-      ), ST_Transform(" . $geo_table->title . ".geom, 4269)
+      ), ST_Transform(" . data_engine_db_table_to_alias($geo_table) . ".geom, 4269)
     )");
     
     $count = $query->countQuery()->execute()->fetchField();

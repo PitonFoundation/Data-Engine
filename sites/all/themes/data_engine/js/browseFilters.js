@@ -52,6 +52,29 @@
         $this.closest(filtersSelector).trigger(events.update);
       }
     },
+    
+    pagerClick: function(ev) {
+
+      var $this = $(this);
+      var data = $.deparam($(this).attr('href').split('?')[1]);
+            
+      $('<div class="loading"><img src="/sites/all/modules/contrib/views/images/loading-small.gif" alt="Loading..." /></div>').insertBefore('.view .view-content .article-list, .view .view-empty');
+      $.ajax({
+        url: window.location.href.split(window.location.search).join(''),
+        dataType: 'json',
+        data: data,
+        success: function(data) {
+          $('.view').replaceWith(data.html);
+          $(filtersSelector).trigger(events.updated);
+          $('.view .pager a').click(methods.pagerClick);
+          dataEngineFancybox();
+        },
+        error: function(jqXHR, textStatus, errorThrown) {}
+      });
+      
+      return false;
+      
+    }, 
 
     /**
      * Initialize the browse filter behaviors
@@ -161,13 +184,15 @@
       
       $('<div class="loading"><img src="/sites/all/modules/contrib/views/images/loading-small.gif" alt="Loading..." /></div>').insertBefore('.view .view-content .article-list, .view .view-empty');
       $.ajax({
-        url: window.location.href,
+        url: window.location.href.split(window.location.search).join(''),
         dataType: 'json',
         data: data,
         success: function(data) {
           $('.view').replaceWith(data.html);
           $(filtersSelector).trigger(events.updated);
-          Drupal.behaviors.ViewsAjaxView.attach();
+          $('.view .pager a').click(methods.pagerClick);
+          dataEngineFancybox();
+          // Drupal.behaviors.ViewsAjaxView.attach();
         },
         error: function(jqXHR, textStatus, errorThrown) {
 /*

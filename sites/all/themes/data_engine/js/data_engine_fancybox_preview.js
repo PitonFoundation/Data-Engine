@@ -1,6 +1,8 @@
 // Adds fancybox functionality to preview buttons.
 (function ($) {
-  $(document).ready(function(){
+
+  dataEngineFancybox = function() {
+    
     $('.button--preview-data, .button--preview-map')
       .attr('data-fancybox-type', 'iframe')
       .each(function() {
@@ -14,5 +16,9 @@
       maxWidth: '1024px',
       maxHeight: '420px'
     });
-  });
+    
+  }; // dataEngineFancybox
+
+  $(document).ready(dataEngineFancybox);
+
 })(jQuery);

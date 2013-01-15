@@ -3,6 +3,7 @@
   <meta charset="utf-8" />
   <title><?php echo $title; ?></title>
   <?php echo $head; ?>
+  <?php echo $css; ?>
   <?php echo '<link rel="stylesheet" type="text/css" href="'
     . url(drupal_get_path("theme", "data_engine") . '/css/wysiwyg.css',
         array ('absolute' => TRUE)) . '" />'; ?>

@@ -72,6 +72,7 @@ function data_engine_embed_display($node) {
       'url' => $nodeURL,
       'js' => drupal_get_js(),
       'head' => drupal_get_html_head(),
+      'css' => drupal_get_css(),
       'footerJS' => drupal_get_js('footer')
     )
   );

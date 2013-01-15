@@ -38,7 +38,7 @@ function data_engine_api_preview($node) {
   $page = pager_default_initialize($total, $num_per_page);
   $offset = $num_per_page * $page;
 
-  $records = data_engine_db_records_from_node($node, $offset, $num_per_page);
+  $records = data_engine_db_filter_records_by_metadata(data_engine_db_records_from_node($node, $offset, $num_per_page), $node);
 
   $headers = array();
 

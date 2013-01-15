@@ -111,7 +111,7 @@
         console.log('get new visualization');
       }
       Drupal.settings.data_engine_visualize.config = config;
-      $.getJSON('/visualize/visualization', {'config': config, 'pagination': 0}, function(data) {
+      $.getJSON('/gallery/visualization', {'config': config, 'pagination': 0}, function(data) {
         if (can_log) { console.log('got new visualization'); }
         if (typeof data.html != 'undefined') {
           $('#visualization-preview').empty().append(data.html);
@@ -126,6 +126,19 @@
           else {
             // remove the existing layer
             var map = Drupal.settings.leaflet[0].lMap;
+            var legend = L.control({position: 'bottomright'});
+            
+            jQuery('.leaflet-bottom.leaflet-right .leaflet-control:not(.leaflet-control-attribution)').remove();
+
+            legend.onAdd = function(map) {
+              
+              var div = $('<div style="background: #fff; padding: 1em;">' + data.legend.maplegend + '</div>');
+        			return div[0];
+
+            } // onAdd
+  
+            legend.addTo(map);
+            
             for (var layer in map._layers) {
               if (layer != 'earth' && typeof map._layers[layer].feature != 'undefined') {
                 map.removeLayer(map._layers[layer]);
@@ -137,7 +150,17 @@
                 style: function(feature) {
                   return feature.properties.style;
                 },
-                onEachFeature: bindPopup
+                onEachFeature: bindPopup,
+                pointToLayer: function (feature, latlng) {
+          				return L.circleMarker(latlng, {
+          					radius: 8,
+          					fillColor: feature.properties.style.fillColor,
+          					color: feature.properties.style.color,
+          					weight: 1,
+          					opacity: 1,
+          					fillOpacity: 0.8
+          				});
+          			}
               });
               map.addLayer(newLayer);
             }

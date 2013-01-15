@@ -6,7 +6,7 @@
 /**
  * Visualization add form
  *
- * URL: visualize/add
+ * URL: gallery/add
  *
  * The form is broken down into sub-functions for each step. The step
  * functions are data_engine_visualize_add_form_N and with "_submit" on
@@ -23,8 +23,12 @@ function data_engine_visualize_add_form($form, &$form_state) {
     isset($_GET['reset'])
   ) {
     _data_engine_visualize_clear_session();
-    drupal_goto('visualize/add');
+    drupal_goto('gallery/add');
     exit;
+  } // if
+
+  if ($_GET['data']) {
+    $datasets = _data_engine_visualize_get_datasets($form_state);
   } // if
 
   // Prompt anonymous users to login to create a visualization
@@ -154,8 +158,10 @@ function data_engine_visualize_add_form_1($form, &$form_state) {
   // add the new datasets, if we can
   if (isset($form_state['values']['add_more_datasets'])) {
     $datasets[] = intval($form_state['values']['add_more_datasets']);
-    $form_state['storage']['datasets'] = $_SESSION['visualization_datasets'] = $datasets;
+    $datasets[] = intval(reset($form_state['values']['datasets']));
   } // if
+
+  $form_state['storage']['datasets'] = $_SESSION['visualization_datasets'] = $datasets;
 
   drupal_add_js(drupal_get_path('module', 'data_engine_visualize') .'/js/add_visualization.js');
 
@@ -192,6 +198,7 @@ function data_engine_visualize_add_form_1($form, &$form_state) {
       '#options' => $datasetOptions,
       '#default_value' => array_keys($datasetOptions),
       // '#value' => array_keys($datasetOptions)
+      '#disabled' => TRUE,
     );
 
     if (count($datasets) < VISUALIZE_MAX_DATASETS) {
@@ -332,6 +339,8 @@ function data_engine_visualize_add_form_2($form, &$form_state) {
 
   $settings = array('datasets' => array());
 
+  $filters = $form_state['storage']['filters'];
+
   foreach ($datasets as $dataset) {
 
     $datasetNode = node_load($dataset);
@@ -354,30 +363,44 @@ function data_engine_visualize_add_form_2($form, &$form_state) {
       $selected = $form_state['storage']['datasetAttributes'][$dataset];
     } // if
 
-    $index = data_engine_db_index_field_from_dataset($datasetNode);
+    $pkey_names = data_engine_db_pkeys_for_node($datasetNode);
+    $gkey_names = data_engine_db_gkeys_for_node($datasetNode);
+    $info = data_engine_db_info_for_node($datasetNode);
+    
+    $display_name = data_engine_db_table_id_to_name_in_field($info->metadata->display_name, $datasetNode);
 
     foreach ($options as $option => $label) {
       
       $option_form_api = str_replace('.', DATA_ENGINE_DB_PLACEHOLDER, $option);
       
-      $form['datasets']['dataset_' . $dataset .'_attributes'][$option_form_api] = array(
-        '#type' => 'checkbox',
-        '#title' => $label,
-      );
+      if (
+        (
+          (!in_array($option, $pkey_names)) &&
+          (!in_array($option, $gkey_names))
+        ) ||
+        (in_array($option, $selected))
+      ) {
       
-      if (in_array($option, $selected)) {
-        $form['datasets']['dataset_' . $dataset .'_attributes'][$option_form_api]['#default_value'] = 1;   
-      }  // if
-      
-      if ($option == $index) {
-        $form['datasets']['dataset_' . $dataset .'_attributes'][$option_form_api]['#default_value'] = 1;
-        $form['datasets']['dataset_' . $dataset .'_attributes'][$option_form_api]['#disabled'] = TRUE; 
+        $form['datasets']['dataset_' . $dataset .'_attributes'][$option_form_api] = array(
+          '#type' => 'checkbox',
+          '#title' => $label,
+        );
+        
+        if (in_array($option, $selected)) {
+          $form['datasets']['dataset_' . $dataset .'_attributes'][$option_form_api]['#default_value'] = 1;   
+        }  // if
+        
+        if ($option == $display_name) {
+          $form['datasets']['dataset_' . $dataset .'_attributes'][$option_form_api]['#default_value'] = 1;   
+          $form['datasets']['dataset_' . $dataset .'_attributes'][$option_form_api]['#disabled'] = TRUE;   
+        } // if
+
       } // if
-     
+
     } // foreach
-    
+
     $value = NULL;
-  
+
     // add some JS settings
     $setting = array('nid' => $dataset);
 
@@ -389,6 +412,71 @@ function data_engine_visualize_add_form_2($form, &$form_state) {
     } // if
 
     $settings['datasets'][$dataset] = $setting;
+
+  } // foreach
+
+  $form['indexes'] = array(
+    '#type' => 'fieldset', 
+    '#title' => t('Limit which records you would like to visualize:'),
+  );
+
+  foreach ($datasets as $dataset) {
+
+    $datasetNode = node_load($dataset);
+
+    $view = node_view($datasetNode, 'visualize_dataset');
+    $form['indexes']['dataset_' . $dataset] = $view;
+    
+    $datasetWrapper = entity_metadata_wrapper('node', $datasetNode);
+    
+    // Show warning on tract maps.
+
+    if ($datasetWrapper->field_location_type->tid->value() == 288) {
+      $form['indexes']['dataset_' . $dataset . '_warning'] = array(
+        '#markup' => "<div>If you'd like to make a map of Census tracts, you'll need to keep the selection to fewer than 30 tracts (due to memory limits).  If you need a map with more tracts, please request your visualization through the Feedback page.  Data Engine administrators are working to fix this memory limit issue.  Thank you for your patience!</div>",
+      );
+    } // if
+    
+    $gkeys = data_engine_db_gkeys_for_node($datasetNode);
+    $pkeys = data_engine_db_pkeys_for_node($datasetNode);
+        
+    foreach ($pkeys as $pkey) {
+        
+      $ids = data_engine_db_values_for_node_key($datasetNode, $pkey);
+      
+      $display_name = data_engin_db_field_machine_name_to_display_name($datasetNode, $pkey);
+        
+      $form['indexes']['dataset_' . $dataset .'_records_' . $pkey] = array(
+        '#type' => 'fieldset',
+        '#title' => $display_name,
+        '#attributes' => array('class' => array('dataset-records')),
+      );
+      
+      if (!in_array($pkey, $gkeys)) {
+      
+        $form['indexes']['dataset_' . $dataset .'_records_' . $pkey]['warning'] = array(
+          '#markup' => "<div>If you would like to create a map please select only one of the options below.  If you do not select an option the system will return results based on the order of the records in the data set.</div>",
+        );
+      
+      } // if
+      
+      foreach ($ids as $id) {
+      
+        $name = md5($dataset . $pkey . $id);
+      
+        $form['indexes']['dataset_' . $dataset .'_records_' . $pkey][$name] = array(
+          '#type' => 'checkbox',
+          '#title' => $id,
+          '#return_value' => $dataset . '::' . $pkey . '::' . $id,
+        );
+        
+        if (in_array($id, $filters[$dataset][$pkey])) {
+          $form['indexes']['dataset_' . $dataset .'_records_' . $pkey][$name]['#default_value'] = $dataset . '::' . $pkey . '::' . $id;
+        } // if
+
+      } // foreach
+
+    } // foreach
 
   } // foreach
 
@@ -450,6 +538,7 @@ function data_engine_visualize_add_form_2_submit($form, &$form_state) {
   
   $selectedFields = array();
   $datasets = $form_state['storage']['datasets'];
+  $filters = array();
 
   foreach ($datasets as $dataset) {
 
@@ -466,16 +555,45 @@ function data_engine_visualize_add_form_2_submit($form, &$form_state) {
       } // if
      
     } // foreach
+    
+    $pkeys = data_engine_db_pkeys_for_node($datasetNode);
+
+    foreach ($form_state['input'] as $input) {
+      
+      if ($input !== NULL) {
+        
+       $input_parts = explode('::', $input);
+
+        if (count($input_parts) == 3) {
+
+          list($dataset_nid, $input_pkey, $input_value) = $input_parts;
+
+          if (!isset($filters[$dataset_nid])) {
+            $filters[$dataset_nid] = array();
+          } // if
+          if (!isset($filters[$dataset_nid][$input_pkey])) {
+            $filters[$dataset_nid][$input_pkey] = array();
+          } // if
+          if (!in_array($input_value, $filters[$dataset_nid][$input_pkey])) {
+            $filters[$dataset_nid][$input_pkey][] = $input_value;
+          } // if
+
+        } // if
+
+      } // if
+      
+    } // foreach
 
   } // foreach
 
   // save the submitted setup to the form state/session
   $form_state['storage']['datasetAttributes'] = $selectedFields;
   $form_state['storage']['datasets'] = array_keys($selectedFields);
+  $form_state['storage']['filters'] = $filters;
 
   // save type
   $form_state['storage']['type'] = $form_state['values']['type'];
-  
+
   // save type name
   $visualizationType = taxonomy_term_load($form_state['values']['type']);
   $visualizationPath = drupal_lookup_path('alias', 'taxonomy/term/' . $visualizationType->tid);
@@ -551,25 +669,36 @@ function data_engine_visualize_add_form_3($form, &$form_state) {
     ) {
       $selected = $form_state['storage']['datasetAttributes'][$dataset];
     } // if
-
-    $index = data_engine_db_index_field_from_dataset($datasetNode);
+    
+    $pkey_names = data_engine_db_pkeys_for_node($datasetNode);
+    $gkey_names = data_engine_db_gkeys_for_node($datasetNode);
 
     foreach ($options as $option => $label) {
       
       $option_form_api = str_replace('.', DATA_ENGINE_DB_PLACEHOLDER, $option);
       
-      $form['visualize']['attributes'][$dataset][$option_form_api] = array(
-        '#type' => 'checkbox',
-        '#title' => $label,
-      );
-      
-      if (in_array($option, $selected)) {
-        $form['visualize']['attributes'][$dataset][$option_form_api]['#default_value'] = 1;   
-      }  // if
-      
-      if ($option == $index) {
-        $form['visualize']['attributes'][$dataset][$option_form_api]['#default_value'] = 1;
-        $form['visualize']['attributes'][$dataset][$option_form_api]['#disabled'] = TRUE; 
+      if (
+        (
+          (!in_array($option, $pkey_names)) &&
+          (!in_array($option, $gkey_names))
+        ) ||
+        (in_array($option, $selected))
+      ) {
+
+        $form['visualize']['attributes'][$dataset][$option_form_api] = array(
+          '#type' => 'checkbox',
+          '#title' => $label,
+        );
+
+        if (in_array($option, $selected)) {
+          $form['visualize']['attributes'][$dataset][$option_form_api]['#default_value'] = 1;   
+        }  // if
+        
+        if ($option == $display_name) {
+          $form['visualize']['attributes'][$dataset][$option_form_api]['#default_value'] = 1;   
+          $form['visualize']['attributes'][$dataset][$option_form_api]['#disabled'] = TRUE;   
+        } // if
+
       } // if
      
     } // foreach
@@ -769,8 +898,9 @@ function _data_engine_visualize_get_config($form_state) {
     'typeName' => $form_state['storage']['typeName'],
     'datasets' => $form_state['storage']['datasets'],
     'attributes' => array(),
+    'filters' => $form_state['storage']['filters'],
   );
-    
+
   foreach ($form_state['storage']['datasetAttributes'] as $nid => $fields) {
 
     $config['attributes'][$nid] = array();
@@ -814,7 +944,7 @@ function _data_engine_visualize_get_dataset_field_options($node, $visualizationC
  * @param array $get        (optional) The get array, mostly used for testing
  * @return array
  */
-function _data_engine_visualize_get_datasets($form_state, $session = NULL, $get = NULL) {
+function _data_engine_visualize_get_datasets(&$form_state, $session = NULL, $get = NULL) {
 
   // if the session is not passed in, use the $_SESSION
   if (!$session && isset($_SESSION)) {
@@ -846,9 +976,16 @@ function _data_engine_visualize_get_datasets($form_state, $session = NULL, $get 
   elseif (!$get && !isset($_GET)) {
     $get = array();
   }
-  if (isset($get['data'])) {
-    $datasets = array_merge($datasets, _data_engine_visualize_convert_get_data($get['data']));
-  }
+
+  // Reset datasets on a new query parameter.
+  if (
+    (isset($get['data'])) &&
+    (!in_array($get['data'], $datasets))
+  ) {
+    $datasets = _data_engine_visualize_convert_get_data($get['data']);
+    _data_engine_visualize_clear_session();
+    $form_state['storage']['step'] = 1;
+  } // if
 
   // validate this
   $datasets = _data_engine_visualize_check_datasets($datasets);

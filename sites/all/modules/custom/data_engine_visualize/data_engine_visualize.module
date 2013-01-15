@@ -6,14 +6,14 @@ define('VISUALIZE_MAX_DATASETS', 2);
  */
 function data_engine_visualize_menu() {
   $items = array();
-  $items['visualize/add'] = array(
+  $items['gallery/add'] = array(
     'title' => 'Add Visualization',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('data_engine_visualize_add_form'),
     'access arguments' => array('create unpublished visualization content'),
     'file' => 'data_engine_visualize.form.inc'
   );
-  $items['visualize/visualization'] = array(
+  $items['gallery/visualization'] = array(
     'page callback' => 'data_engine_visualize_visualization',
     'access arguments' => array('create unpublished visualization content'),
   );
@@ -92,6 +92,10 @@ function data_engine_visualize_visualization($config = NULL, $args = NULL) {
       'data' => $visualization->data($args),
       'visualizationID' => $visualization->visualizationID($args)
     );
+    
+    if ($config['typeName'] == 'map') {
+      $response['legend'] = $visualization->legendSettings();
+    } // if
   }
   else {
     $response = array('type' => $config['typeName'], 'html' => $visualization->render($args));

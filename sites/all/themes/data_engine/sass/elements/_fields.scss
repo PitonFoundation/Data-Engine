@@ -131,3 +131,9 @@
   &.data-table > a { @include icon-sprite(data-table); }
   &.map > a { @include icon-sprite(map); }
 }
+
+// API URL
+.field-name-dataset-api-link {
+  clear: both;
+  text-align: left;
+}

@@ -406,6 +406,45 @@ function data_engine_preprocess_html(&$variables) {
   drupal_add_js(drupal_get_path('theme', 'data_engine') . '/webfonts/ss-standard.js',
     $options
   );
+    // Add typekit javascript
+  drupal_add_js('http://use.typekit.net/cfk6smu.js', 'external');
+  drupal_add_js('try{Typekit.load();}catch(e){}', 'inline');
+
+  // Add header meta tag for IE to head
+  $meta_ie_render_engine = array(
+    '#type' => 'html_tag',
+    '#tag' => 'meta',
+    '#attributes' => array(
+      'http-equiv' => 'X-UA-Compatible',
+      'content' =>  'IE=edge,chrome=1',
+    )
+  );
+
+  drupal_add_html_head($meta_ie_render_engine, 'meta_ie_render_engine');
+
+  // Add clear type meta tag
+  $meta_clear_type = array(
+    '#type' => 'html_tag',
+    '#tag' => 'meta',
+    '#attributes' => array(
+      'http-equiv' => 'X-UA-Compatible',
+      'content' =>  'on',
+    )
+  );
+
+  drupal_add_html_head($meta_clear_type, 'meta_clear_type');
+
+  // Add mobile optimized meta tag
+  $meta_mobile_optimized = array(
+    '#type' => 'html_tag',
+    '#tag' => 'meta',
+    '#attributes' => array(
+      'name' => 'MobileOptimized',
+      'content' =>  'width',
+    )
+  );
+
+  drupal_add_html_head($meta_mobile_optimized, 'meta_mobile_optimized');
 }
 
 /**

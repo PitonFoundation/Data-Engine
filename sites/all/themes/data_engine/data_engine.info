@@ -38,6 +38,7 @@ stylesheets[print][] = css/override/keep/print.css
 ;-------------- J S -------------
 scripts[] = ../../libraries/fancybox/source/jquery.fancybox.pack.js
 scripts[] = js/browseFilters.js
+scripts[] = js/jquery.bbq.min.js
 scripts[] = webfonts/ss-social.js
 scripts[] = webfonts/ss-standard.js
 scripts[] = js/main.js
